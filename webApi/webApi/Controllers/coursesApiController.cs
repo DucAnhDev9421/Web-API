@@ -5,7 +5,7 @@ using webApi.Repositories;
 
 namespace webApi.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/courses")]
     [ApiController]
     public class coursesApiController : ControllerBase
     {
@@ -15,6 +15,7 @@ namespace webApi.Controllers
         {
             _coursesRepository = coursesRepository;
         }
+        //Lây danh sách tất cả các khóa học
         [HttpGet]
         public async Task<IActionResult> Getcourses()
         {
@@ -29,6 +30,7 @@ namespace webApi.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        //Lấy khóa học theo id
         [HttpGet("{id}")]
         public async Task<IActionResult> GetcoursesById(int id)
         {
@@ -46,6 +48,7 @@ namespace webApi.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        //Thêm khóa học
         [HttpPost]
         public async Task<IActionResult> Addcourses([FromBody] courses courses)
         {
@@ -63,6 +66,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        //Cập nhật khóa học
         [HttpPut("{id}")]
         public async Task<IActionResult> Updatecourses(int id, [FromBody] courses courses)
         {
@@ -79,6 +83,7 @@ namespace webApi.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        //Xóa khóa học
         [HttpDelete("{id}")]
         public async Task<IActionResult> Deletecourses(int id)
         {
