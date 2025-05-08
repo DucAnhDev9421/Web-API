@@ -9,5 +9,6 @@ namespace webApi.Repositories
         Task AddcoursesAsync(courses courses);
         Task UpdatecoursesAsync(courses courses);
         Task DeletecoursesAsync(int id);
+        Task<IEnumerable<courses>> GetFreecoursesAsync();
     }
 }

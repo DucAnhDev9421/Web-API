@@ -41,5 +41,11 @@ namespace webApi.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+        public async Task<IEnumerable<courses>> GetFreecoursesAsync()
+        {
+            return await _context.courses
+                .Where(c => c.Price == 0)  //  Lọc các khóa học có giá bằng 0
+                .ToListAsync();
+        }
     }
 }

@@ -33,6 +33,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IcoursesRepository, coursesRepository>();
+builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
+builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>

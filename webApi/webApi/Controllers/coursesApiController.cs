@@ -98,5 +98,18 @@ namespace webApi.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+        [HttpGet("free")]
+        public async Task<IActionResult> GetFreecourses()
+        {
+            try
+            {
+                var freecourses = await _coursesRepository.GetFreecoursesAsync();
+                return Ok(freecourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }
