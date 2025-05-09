@@ -15,5 +15,7 @@ namespace webApi.Model
         public string VideoUrl { get; set; }
 
         public int CourseId { get; set; }
+        public int Order { get; set; }
+        public bool IsVisible { get; set; }
     }
 }

@@ -10,10 +10,12 @@ namespace webApi.Controllers
     public class VideosController : ControllerBase
     {
         private readonly IVideoRepository _videoRepository;
+        private readonly INoteRepository _noteRepository;
 
-        public VideosController(IVideoRepository videoRepository)
+        public VideosController(IVideoRepository videoRepository, INoteRepository noteRepository)
         {
             _videoRepository = videoRepository;
+            _noteRepository = noteRepository;
         }
 
         [HttpGet("{id}")]
@@ -90,7 +92,25 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpPatch("{id}/order")]
+        public async Task<IActionResult> UpdateVideoOrder(int id, [FromBody] int order)
+        {
+            try
+            {
+                var existingVideo = await _videoRepository.GetVideoByIdAsync(id);
+                if (existingVideo == null)
+                {
+                    return NotFound();
+                }
 
+                await _videoRepository.UpdateVideoOrderAsync(id, order);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVideo(int id)
         {
@@ -103,6 +123,63 @@ namespace webApi.Controllers
                 }
 
                 await _videoRepository.DeleteVideoAsync(id);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("{id}/notes")]
+        public async Task<IActionResult> GetVideoNotes(int id)
+        {
+            try
+            {
+                var video = await _videoRepository.GetVideoByIdAsync(id);
+                if (video == null)
+                {
+                    return NotFound("Video not found");
+                }
+
+                var notes = await _noteRepository.GetNotesByVideoIdAsync(id);
+                return Ok(notes);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}/visibility")]
+        public async Task<IActionResult> UpdateVideoVisibility(int id, [FromBody] bool isVisible)
+        {
+            try
+            {
+                var existingVideo = await _videoRepository.GetVideoByIdAsync(id);
+                if (existingVideo == null)
+                {
+                    return NotFound();
+                }
+
+                await _videoRepository.UpdateVideoVisibilityAsync(id, isVisible);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}/metadata")]  // New PATCH endpoint
+        public async Task<IActionResult> UpdateVideoMetadata(int id, [FromBody] VideoMetadataDto metadata)
+        {
+            try
+            {
+                var existingVideo = await _videoRepository.GetVideoByIdAsync(id);
+                if (existingVideo == null)
+                {
+                    return NotFound();
+                }
+
+                await _videoRepository.UpdateVideoMetadataAsync(id, metadata.Title, metadata.Description);
                 return NoContent();
             }
             catch (Exception ex)

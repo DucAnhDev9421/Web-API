@@ -35,6 +35,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IcoursesRepository, coursesRepository>();
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
+builder.Services.AddScoped<INoteRepository, NoteRepository>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
