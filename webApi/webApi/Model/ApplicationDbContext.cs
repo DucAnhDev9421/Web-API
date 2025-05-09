@@ -10,5 +10,19 @@ namespace webApi.Model
         public DbSet<Categories> Categories { get; set; }
         public DbSet<Video> Videos { get; set; }
         public DbSet<Note> Notes { get; set; }
+        public DbSet<UserInfo> Users { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<UserInfo>()
+                .Property(u => u.Id)
+                .IsRequired();
+
+            modelBuilder.Entity<UserInfo>()
+                .Property(u => u.Email)
+                .IsRequired();
+        }
     }
 }

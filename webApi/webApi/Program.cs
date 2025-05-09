@@ -29,6 +29,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Add HttpClient for Clerk
+builder.Services.AddHttpClient("Clerk", client =>
+{
+    client.BaseAddress = new Uri("https://api.clerk.dev/v1/");
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+});
+
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
@@ -36,6 +43,7 @@ builder.Services.AddScoped<IcoursesRepository, coursesRepository>();
 builder.Services.AddScoped<ICategoriesRepository, CategoriesRepository>();
 builder.Services.AddScoped<IVideoRepository, VideoRepository>();
 builder.Services.AddScoped<INoteRepository, NoteRepository>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
