@@ -1,4 +1,4 @@
-﻿using webApi.Model;
+﻿using webApi.Model.CategoryModel;
 
 namespace webApi.Repositories
 {

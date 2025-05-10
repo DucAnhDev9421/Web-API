@@ -2,7 +2,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace webApi.Model
+namespace webApi.Model.CourseModel
 {
     public class courses
     {
@@ -17,5 +17,8 @@ namespace webApi.Model
 
         [StringLength(500)]
         public string Description { get; set; }
+
+        [StringLength(500)]
+        public string ImageUrl { get; set; }
     }
 }

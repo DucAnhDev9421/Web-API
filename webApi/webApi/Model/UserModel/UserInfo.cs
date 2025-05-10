@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
 
-namespace webApi.Model
+namespace webApi.Model.UserModel
 {
     public class UserInfo
     {

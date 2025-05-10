@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using webApi.Model;
+using webApi.Model.CategoryModel;
 namespace webApi.Repositories
 {
     public class CategoriesRepository : ICategoriesRepository

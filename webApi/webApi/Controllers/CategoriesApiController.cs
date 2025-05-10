@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using webApi.Model;
 using webApi.Repositories;
 using System;
 using System.Threading.Tasks;
+using webApi.Model.CategoryModel;
 
 namespace webApi.Controllers
 {

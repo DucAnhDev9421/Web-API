@@ -10,5 +10,6 @@ namespace webApi.Repositories
         Task UpdateNoteAsync(Note note);
         Task DeleteNoteAsync(int id);
         Task<List<Note>> GetNotesByVideoIdAsync(int videoId);
+        Task<List<Note>> GetNotesByUserIdAsync(string userId);
     }
 }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using webApi.Model;
+using webApi.Model.CourseModel;
 using webApi.Repositories;
 
 namespace webApi.Controllers
@@ -105,6 +105,37 @@ namespace webApi.Controllers
             {
                 var freecourses = await _coursesRepository.GetFreecoursesAsync();
                 return Ok(freecourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("recommend")]
+        public async Task<IActionResult> GetRecommendedCourses([FromQuery] string userId, [FromQuery] int limit = 5)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return BadRequest("UserId is required");
+                }
+
+                var recommendations = await _coursesRepository.GetRecommendedCoursesAsync(userId, limit);
+                return Ok(recommendations);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("top-rated")]
+        public async Task<IActionResult> GetTopRatedCourses([FromQuery] int limit = 10)
+        {
+            try
+            {
+                var topRatedCourses = await _coursesRepository.GetTopRatedCoursesAsync(limit);
+                return Ok(topRatedCourses);
             }
             catch (Exception ex)
             {

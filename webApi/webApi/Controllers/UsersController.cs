@@ -3,7 +3,9 @@ using System.Net.Http;
 using System.Text.Json;
 using System.Threading.Tasks;
 using webApi.Model;
+using webApi.Model.UserModel;
 using webApi.Repositories;
+using System.ComponentModel.DataAnnotations;
 
 namespace webApi.Controllers
 {
@@ -14,15 +16,21 @@ namespace webApi.Controllers
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly IConfiguration _configuration;
         private readonly IUserRepository _userRepository;
+        private readonly IUserCourseProgressRepository _userCourseProgressRepository;
+        private readonly INoteRepository _noteRepository;
 
         public UsersController(
             IHttpClientFactory httpClientFactory, 
             IConfiguration configuration,
-            IUserRepository userRepository)
+            IUserRepository userRepository,
+            IUserCourseProgressRepository userCourseProgressRepository,
+            INoteRepository noteRepository)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _userRepository = userRepository;
+            _userCourseProgressRepository = userCourseProgressRepository;
+            _noteRepository = noteRepository;
         }
 
         [HttpGet("{id}")]
@@ -210,5 +218,218 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
+
+        [HttpGet("{id}/dashboard")]
+        public async Task<IActionResult> GetUserDashboard(string id)
+        {
+            try
+            {
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                var dashboard = await _userCourseProgressRepository.GetUserDashboardAsync(id);
+                return Ok(dashboard);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{id}/profile")]
+        public async Task<IActionResult> GetUserProfile(string id)
+        {
+            try
+            {
+                var profile = await _userRepository.GetUserProfileAsync(id);
+                if (profile == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                return Ok(profile);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPatch("{id}/favorite")]
+        public async Task<IActionResult> ToggleFavoriteCourse(string id, [FromBody] FavoriteCourseDto favoriteDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                var isNowFavorite = await _userRepository.ToggleFavoriteCourseAsync(id, favoriteDto.CourseId);
+                
+                return Ok(new { 
+                    isFavorite = isNowFavorite,
+                    message = isNowFavorite 
+                        ? "Đã thêm khóa học vào danh sách yêu thích" 
+                        : "Đã xóa khóa học khỏi danh sách yêu thích"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{id}/favorites")]
+        public async Task<IActionResult> GetFavoriteCourses(string id)
+        {
+            try
+            {
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                var favorites = await _userRepository.GetUserFavoriteCoursesAsync(id);
+                return Ok(favorites);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{id}/notes")]
+        public async Task<IActionResult> GetUserNotes(string id)
+        {
+            try
+            {
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Lấy danh sách ghi chú của user
+                var notes = await _noteRepository.GetNotesByUserIdAsync(id);
+                
+                return Ok(notes);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPost("{id}/notes")]
+        public async Task<IActionResult> CreateUserNote(string id, [FromBody] CreateUserNoteDto createNoteDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Kiểm tra video tồn tại (nếu cần)
+                // Có thể thêm kiểm tra video tồn tại ở đây nếu cần
+
+                // Tạo ghi chú mới
+                var note = new Note
+                {
+                    Title = createNoteDto.Title,
+                    Content = createNoteDto.Content,
+                    VideoId = createNoteDto.VideoId,
+                    UserId = id,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                // Lưu ghi chú vào database
+                await _noteRepository.AddNoteAsync(note);
+
+                return CreatedAtAction(nameof(GetUserNotes), new { id = id }, note);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("{id}/statistics")]
+        public async Task<IActionResult> GetUserStatistics(string id)
+        {
+            try
+            {
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Lấy thống kê chi tiết
+                var statistics = await _userCourseProgressRepository.GetUserStatisticsAsync(id);
+                
+                return Ok(statistics);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("enrollments/{id}/detail")]
+        public async Task<IActionResult> GetEnrollmentDetail(int id)
+        {
+            try
+            {
+                var enrollmentDetail = await _userCourseProgressRepository.GetEnrollmentDetailAsync(id);
+                if (enrollmentDetail == null)
+                    return NotFound();
+
+                return Ok(enrollmentDetail);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+    }
+
+    public class FavoriteCourseDto
+    {
+        public int CourseId { get; set; }
+    }
+
+    public class CreateUserNoteDto
+    {
+        [Required(ErrorMessage = "Tiêu đề không được để trống")]
+        public string Title { get; set; }
+
+        public string Content { get; set; }
+
+        [Required(ErrorMessage = "VideoId không được để trống")]
+        public int VideoId { get; set; }
     }
 } 
