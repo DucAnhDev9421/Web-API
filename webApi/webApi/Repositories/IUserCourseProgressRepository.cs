@@ -10,6 +10,5 @@ namespace webApi.Repositories
         Task<bool> DeleteProgressAsync(int id);
         Task<DashboardOverview> GetUserDashboardAsync(string userId);
         Task<UserStatistics> GetUserStatisticsAsync(string userId);
-        Task<EnrollmentDetailDto> GetEnrollmentDetailAsync(int id);
     }
 } 

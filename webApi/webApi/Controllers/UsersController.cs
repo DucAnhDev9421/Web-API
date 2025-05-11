@@ -398,23 +398,6 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
-
-        [HttpGet("enrollments/{id}/detail")]
-        public async Task<IActionResult> GetEnrollmentDetail(int id)
-        {
-            try
-            {
-                var enrollmentDetail = await _userCourseProgressRepository.GetEnrollmentDetailAsync(id);
-                if (enrollmentDetail == null)
-                    return NotFound();
-
-                return Ok(enrollmentDetail);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
     }
 
     public class FavoriteCourseDto

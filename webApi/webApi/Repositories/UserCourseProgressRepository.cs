@@ -216,44 +216,5 @@ namespace webApi.Repositories
                 ActivityByDay = activityByDay
             };
         }
-
-        public async Task<EnrollmentDetailDto> GetEnrollmentDetailAsync(int id)
-        {
-            var enrollment = await _context.UserCourseProgress
-                .Include(p => p.Course)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
-            if (enrollment == null)
-                return null;
-
-            return new EnrollmentDetailDto
-            {
-                Id = enrollment.Id,
-                Course = new CourseInfoDto
-                {
-                    Id = enrollment.Course.Id,
-                    Name = enrollment.Course.Name,
-                    Description = enrollment.Course.Description,
-                    Price = enrollment.Course.Price,
-                    ImageUrl = enrollment.Course.ImageUrl
-                },
-                Progress = new ProgressInfoDto
-                {
-                    CompletedVideos = enrollment.CompletedVideos,
-                    TotalVideos = enrollment.TotalVideos
-                },
-                Instructor = new InstructorInfoDto
-                {
-                    Id = enrollment.User.Id,
-                    FullName = $"{enrollment.User.FirstName} {enrollment.User.LastName}".Trim(),
-                    Email = enrollment.User.Email,
-                    ImageUrl = enrollment.User.ImageUrl,
-                    ProfileImageUrl = enrollment.User.ProfileImageUrl
-                },
-                EnrolledAt = enrollment.CreatedAt,
-                LastAccessed = enrollment.LastAccessed
-            };
-        }
     }
 } 
