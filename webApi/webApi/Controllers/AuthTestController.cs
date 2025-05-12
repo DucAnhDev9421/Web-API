@@ -3,37 +3,24 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace webApi.Controllers
 {
+    [Route("api/auth")]
     [ApiController]
-    [Route("api/[controller]")]
     public class AuthTestController : ControllerBase
     {
-        [HttpGet("public")]
-        public IActionResult PublicEndpoint()
-        {
-            return Ok(new { message = "This is a public endpoint. No authentication required." });
-        }
-
+        [HttpGet("test")]
         [Authorize]
-        [HttpGet("protected")]
-        public IActionResult ProtectedEndpoint()
+        public IActionResult TestAuth()
         {
-            var userId = User.FindFirst("sub")?.Value;
-            return Ok(new { 
-                message = "This is a protected endpoint. Authentication required.",
-                userId = userId
-            });
-        }
+            // Lấy thông tin user từ token
+            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
+            var email = User.Claims.FirstOrDefault(c => c.Type == "email")?.Value;
 
-        [Authorize]
-        [HttpGet("admin")]
-        public IActionResult AdminEndpoint()
-        {
-            var userId = User.FindFirst("sub")?.Value;
-            var email = User.FindFirst("email")?.Value;
-            return Ok(new { 
-                message = "This is an admin endpoint. Authentication required.",
-                userId = userId,
-                email = email
+            return Ok(new
+            {
+                message = "Token hợp lệ!",
+                userId,
+                email
+               
             });
         }
     }

@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using webApi.Model;
+using webApi.Model.CourseModel;
 using webApi.Repositories;
 
 namespace webApi.Controllers
@@ -96,6 +96,89 @@ namespace webApi.Controllers
             {
                 // Handle exception 
                 return StatusCode(500, "Internal server error");
+            }
+        }
+        [HttpGet("free")]
+        public async Task<IActionResult> GetFreecourses()
+        {
+            try
+            {
+                var freecourses = await _coursesRepository.GetFreecoursesAsync();
+                return Ok(freecourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("recommend")]
+        public async Task<IActionResult> GetRecommendedCourses([FromQuery] string userId, [FromQuery] int limit = 5)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return BadRequest("UserId is required");
+                }
+
+                var recommendations = await _coursesRepository.GetRecommendedCoursesAsync(userId, limit);
+                return Ok(recommendations);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("top-rated")]
+        public async Task<IActionResult> GetTopRatedCourses([FromQuery] int limit = 10)
+        {
+            try
+            {
+                var topRatedCourses = await _coursesRepository.GetTopRatedCoursesAsync(limit);
+                return Ok(topRatedCourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPost("{id}/related")]
+        public async Task<IActionResult> AddRelatedCourse(int id, [FromBody] int relatedCourseId)
+        {
+            try
+            {
+                await _coursesRepository.AddRelatedCourseAsync(id, relatedCourseId);
+                return Ok(new { message = "Related course added successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("{id}/related")]
+        public async Task<IActionResult> GetRelatedCourses(int id)
+        {
+            try
+            {
+                var relatedCourses = await _coursesRepository.GetRelatedCoursesAsync(id);
+                return Ok(relatedCourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateCourseStatus(int id, [FromBody] CourseStatus status)
+        {
+            try
+            {
+                await _coursesRepository.UpdateCourseStatusAsync(id, status);
+                return Ok(new { message = "Course status updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
     }

@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using webApi.Model;
 
@@ -11,9 +12,11 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250510080244_Admin")]
+    partial class Admin
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -22,7 +25,7 @@ namespace webApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("webApi.Model.CategoryModel.Categories", b =>
+            modelBuilder.Entity("webApi.Model.Categories", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -39,54 +42,6 @@ namespace webApi.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
-                {
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RelatedCourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CourseId", "RelatedCourseId");
-
-                    b.HasIndex("RelatedCourseId");
-
-                    b.ToTable("RelatedCourses");
-                });
-
-            modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("courses");
-                });
-
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
                     b.Property<int>("Id")
@@ -99,26 +54,14 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("VideoId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("UserId");
 
                     b.HasIndex("VideoId");
 
@@ -162,7 +105,7 @@ namespace webApi.Migrations
                     b.ToTable("Ratings");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
+            modelBuilder.Entity("webApi.Model.UserCourseProgress", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -201,36 +144,7 @@ namespace webApi.Migrations
                     b.ToTable("UserCourseProgress");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("UserId", "CourseId")
-                        .IsUnique();
-
-                    b.ToTable("UserFavoriteCourses");
-                });
-
-            modelBuilder.Entity("webApi.Model.UserModel.UserInfo", b =>
+            modelBuilder.Entity("webApi.Model.UserInfo", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(450)
@@ -318,53 +232,51 @@ namespace webApi.Migrations
                     b.ToTable("Videos");
                 });
 
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
+            modelBuilder.Entity("webApi.Model.courses", b =>
                 {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
 
-                    b.HasOne("webApi.Model.CourseModel.courses", "Related")
-                        .WithMany()
-                        .HasForeignKey("RelatedCourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Navigation("Course");
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
 
-                    b.Navigation("Related");
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("courses");
                 });
 
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
-                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("webApi.Model.Video", "Video")
                         .WithMany()
                         .HasForeignKey("VideoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.Navigation("User");
-
                     b.Navigation("Video");
                 });
 
             modelBuilder.Entity("webApi.Model.Rating", b =>
                 {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                    b.HasOne("webApi.Model.courses", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                    b.HasOne("webApi.Model.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -375,34 +287,15 @@ namespace webApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
+            modelBuilder.Entity("webApi.Model.UserCourseProgress", b =>
                 {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                    b.HasOne("webApi.Model.courses", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
-                {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                    b.HasOne("webApi.Model.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)

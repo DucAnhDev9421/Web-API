@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using webApi.Model;
 
@@ -11,9 +12,11 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250510084411_Updatenote")]
+    partial class Updatenote
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -39,21 +42,6 @@ namespace webApi.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
-                {
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RelatedCourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CourseId", "RelatedCourseId");
-
-                    b.HasIndex("RelatedCourseId");
-
-                    b.ToTable("RelatedCourses");
-                });
-
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
                 {
                     b.Property<int>("Id")
@@ -67,20 +55,12 @@ namespace webApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
-                    b.Property<string>("ImageUrl")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -201,35 +181,6 @@ namespace webApi.Migrations
                     b.ToTable("UserCourseProgress");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("UserId")
-                        .IsRequired()
-                        .HasMaxLength(450)
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CourseId");
-
-                    b.HasIndex("UserId", "CourseId")
-                        .IsUnique();
-
-                    b.ToTable("UserFavoriteCourses");
-                });
-
             modelBuilder.Entity("webApi.Model.UserModel.UserInfo", b =>
                 {
                     b.Property<string>("Id")
@@ -318,25 +269,6 @@ namespace webApi.Migrations
                     b.ToTable("Videos");
                 });
 
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
-                {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("webApi.Model.CourseModel.courses", "Related")
-                        .WithMany()
-                        .HasForeignKey("RelatedCourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Related");
-                });
-
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
                     b.HasOne("webApi.Model.UserModel.UserInfo", "User")
@@ -376,25 +308,6 @@ namespace webApi.Migrations
                 });
 
             modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
-                {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("User");
-                });
-
-            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.courses", "Course")
                         .WithMany()

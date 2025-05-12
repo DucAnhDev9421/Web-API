@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using webApi.Model;
 
@@ -11,9 +12,11 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250511140911_Update")]
+    partial class Update
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -37,21 +40,6 @@ namespace webApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Categories");
-                });
-
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
-                {
-                    b.Property<int>("CourseId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("RelatedCourseId")
-                        .HasColumnType("int");
-
-                    b.HasKey("CourseId", "RelatedCourseId");
-
-                    b.HasIndex("RelatedCourseId");
-
-                    b.ToTable("RelatedCourses");
                 });
 
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
@@ -78,9 +66,6 @@ namespace webApi.Migrations
 
                     b.Property<decimal>("Price")
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -316,25 +301,6 @@ namespace webApi.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Videos");
-                });
-
-            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
-                {
-                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
-                        .HasForeignKey("CourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("webApi.Model.CourseModel.courses", "Related")
-                        .WithMany()
-                        .HasForeignKey("RelatedCourseId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Course");
-
-                    b.Navigation("Related");
                 });
 
             modelBuilder.Entity("webApi.Model.Note", b =>
