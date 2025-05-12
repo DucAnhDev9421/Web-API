@@ -17,6 +17,7 @@ namespace webApi.Model
         public DbSet<UserCourseProgress> UserCourseProgress { get; set; }
         public DbSet<Rating> Ratings { get; set; }
         public DbSet<UserFavoriteCourse> UserFavoriteCourses { get; set; }
+        public DbSet<RelatedCourse> RelatedCourses { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -76,6 +77,22 @@ namespace webApi.Model
             modelBuilder.Entity<UserFavoriteCourse>()
                 .HasIndex(f => new { f.UserId, f.CourseId })
                 .IsUnique();
+
+            // Cấu hình quan hệ nhiều-nhiều cho khoá học liên quan
+            modelBuilder.Entity<RelatedCourse>()
+                .HasKey(rc => new { rc.CourseId, rc.RelatedCourseId });
+
+            modelBuilder.Entity<RelatedCourse>()
+                .HasOne(rc => rc.Course)
+                .WithMany()
+                .HasForeignKey(rc => rc.CourseId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<RelatedCourse>()
+                .HasOne(rc => rc.Related)
+                .WithMany()
+                .HasForeignKey(rc => rc.RelatedCourseId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

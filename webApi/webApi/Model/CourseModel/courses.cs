@@ -4,6 +4,14 @@ using System.Text.Json.Serialization;
 
 namespace webApi.Model.CourseModel
 {
+    public enum CourseStatus
+    {
+        Pending = 0,
+        Approved = 1,
+        Rejected = 2,
+        Hidden = 3
+    }
+
     public class courses
     {
         public int Id { get; set; }
@@ -20,5 +28,10 @@ namespace webApi.Model.CourseModel
 
         [StringLength(500)]
         public string ImageUrl { get; set; }
+
+        public CourseStatus Status { get; set; } = CourseStatus.Pending;
+
+        [NotMapped]
+        public string StatusText => Status.ToString();
     }
 }

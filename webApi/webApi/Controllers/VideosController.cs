@@ -150,18 +150,24 @@ namespace webApi.Controllers
             }
         }
         [HttpPatch("{id}/visibility")]
-        public async Task<IActionResult> UpdateVideoVisibility(int id, [FromBody] bool isVisible)
+        public async Task<IActionResult> UpdateVideoVisibility(int id, [FromBody] VideoVisibilityDto dto)
         {
             try
             {
+                if (dto == null)
+                {
+                    return BadRequest("Request body is required");
+                }
                 var existingVideo = await _videoRepository.GetVideoByIdAsync(id);
                 if (existingVideo == null)
                 {
                     return NotFound();
                 }
 
-                await _videoRepository.UpdateVideoVisibilityAsync(id, isVisible);
-                return NoContent();
+                await _videoRepository.UpdateVideoVisibilityAsync(id, dto.IsVisible);
+                // Lấy lại video đã cập nhật
+                var updatedVideo = await _videoRepository.GetVideoByIdAsync(id);
+                return Ok(updatedVideo);
             }
             catch (Exception ex)
             {

@@ -219,5 +219,56 @@ namespace webApi.Repositories
 
             return topRatedCourses;
         }
+
+        public async Task AddRelatedCourseAsync(int courseId, int relatedCourseId)
+        {
+            var exists = await _context.RelatedCourses
+                .AnyAsync(rc => rc.CourseId == courseId && rc.RelatedCourseId == relatedCourseId);
+            if (!exists)
+            {
+                _context.RelatedCourses.Add(new RelatedCourse
+                {
+                    CourseId = courseId,
+                    RelatedCourseId = relatedCourseId
+                });
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<IEnumerable<courses>> GetRelatedCoursesAsync(int courseId)
+        {
+            var relatedIds = await _context.RelatedCourses
+                .Where(rc => rc.CourseId == courseId)
+                .Select(rc => rc.RelatedCourseId)
+                .ToListAsync();
+            return await _context.courses
+                .Where(c => relatedIds.Contains(c.Id))
+                .ToListAsync();
+        }
+
+        public async Task UpdateCourseStatusAsync(int courseId, CourseStatus status)
+        {
+            var course = await _context.courses.FindAsync(courseId);
+            if (course != null)
+            {
+                course.Status = status;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<IEnumerable<courses>> SearchCoursesAsync(string query)
+        {
+            if (string.IsNullOrWhiteSpace(query))
+            {
+                return await _context.courses.ToListAsync();
+            }
+
+            query = query.ToLower().Trim();
+            return await _context.courses
+                .Where(c => c.Status == CourseStatus.Approved && // Only search approved courses
+                    (c.Name.ToLower().Contains(query) || 
+                     (c.Description != null && c.Description.ToLower().Contains(query))))
+                .ToListAsync();
+        }
     }
 }

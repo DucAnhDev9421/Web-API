@@ -142,5 +142,44 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpPost("{id}/related")]
+        public async Task<IActionResult> AddRelatedCourse(int id, [FromBody] int relatedCourseId)
+        {
+            try
+            {
+                await _coursesRepository.AddRelatedCourseAsync(id, relatedCourseId);
+                return Ok(new { message = "Related course added successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpGet("{id}/related")]
+        public async Task<IActionResult> GetRelatedCourses(int id)
+        {
+            try
+            {
+                var relatedCourses = await _coursesRepository.GetRelatedCoursesAsync(id);
+                return Ok(relatedCourses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+        [HttpPatch("{id}/status")]
+        public async Task<IActionResult> UpdateCourseStatus(int id, [FromBody] CourseStatus status)
+        {
+            try
+            {
+                await _coursesRepository.UpdateCourseStatusAsync(id, status);
+                return Ok(new { message = "Course status updated successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
     }
 }

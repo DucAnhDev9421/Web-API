@@ -74,14 +74,57 @@ namespace webApi.Controllers
             }
         }
 
+        [HttpPost("batch")]
+        public async Task<IActionResult> CreateCategoriesBatch([FromBody] List<Categories> categories)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                if (categories == null || !categories.Any())
+                {
+                    return BadRequest("No categories provided");
+                }
+
+                // Validate each category
+                foreach (var category in categories)
+                {
+                    if (string.IsNullOrWhiteSpace(category.Name))
+                    {
+                        return BadRequest($"Category name cannot be empty");
+                    }
+                }
+
+                await _categoriesRepository.AddCategoriesBatchAsync(categories);
+                return Ok(new { message = $"{categories.Count} categories created successfully" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
+        }
+
         [HttpPut("{id}")]
         public async Task<IActionResult> UpdateCategories(int id, [FromBody] Categories categories)
         {
             try
             {
-                if (id != categories.Id)
+                if (id <= 0)
                 {
-                    return BadRequest("Categories ID mismatch");
+                    return BadRequest("Invalid category ID");
+                }
+
+                if (categories == null)
+                {
+                    return BadRequest("Category data is required");
+                }
+
+                if (string.IsNullOrWhiteSpace(categories.Name))
+                {
+                    return BadRequest("Category name cannot be empty");
                 }
 
                 if (!ModelState.IsValid)
@@ -89,18 +132,20 @@ namespace webApi.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var existingcategories = await _categoriesRepository.GetCategoriesByIdAsync(id);
-                if (existingcategories == null)
+                var existingCategory = await _categoriesRepository.GetCategoriesByIdAsync(id);
+                if (existingCategory == null)
                 {
-                    return NotFound();
+                    return NotFound($"Category with ID {id} not found");
                 }
 
-                // Cập nhật các thuộc tính của existingcategories
-                existingcategories.Name = categories.Name;
-                // ... cập nhật các thuộc tính khác ...
+                // Update category properties
+                existingCategory.Name = categories.Name.Trim();
 
-                await _categoriesRepository.UpdateCategoriesAsync(existingcategories); // Truyền entity đã được cập nhật
-                return NoContent();
+                await _categoriesRepository.UpdateCategoriesAsync(existingCategory);
+                return Ok(new { 
+                    message = "Category updated successfully",
+                    category = existingCategory
+                });
             }
             catch (Exception ex)
             {
@@ -113,14 +158,19 @@ namespace webApi.Controllers
         {
             try
             {
-                var existingCategories = await _categoriesRepository.GetCategoriesByIdAsync(id);
-                if (existingCategories == null)
+                if (id <= 0)
                 {
-                    return NotFound();
+                    return BadRequest("Invalid category ID");
+                }
+
+                var existingCategory = await _categoriesRepository.GetCategoriesByIdAsync(id);
+                if (existingCategory == null)
+                {
+                    return NotFound($"Category with ID {id} not found");
                 }
 
                 await _categoriesRepository.DeleteCategoriesAsync(id);
-                return NoContent();
+                return Ok(new { message = $"Category '{existingCategory.Name}' deleted successfully" });
             }
             catch (Exception ex)
             {

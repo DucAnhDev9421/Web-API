@@ -12,5 +12,9 @@ namespace webApi.Repositories
         Task<IEnumerable<courses>> GetFreecoursesAsync();
         Task<IEnumerable<CourseRecommendation>> GetRecommendedCoursesAsync(string userId, int limit = 5);
         Task<IEnumerable<TopRatedCourse>> GetTopRatedCoursesAsync(int limit = 10);
+        Task AddRelatedCourseAsync(int courseId, int relatedCourseId);
+        Task<IEnumerable<courses>> GetRelatedCoursesAsync(int courseId);
+        Task UpdateCourseStatusAsync(int courseId, CourseStatus status);
+        Task<IEnumerable<courses>> SearchCoursesAsync(string query);
     }
 }

@@ -6,6 +6,7 @@ using webApi.Model;
 using webApi.Model.UserModel;
 using webApi.Repositories;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Authorization;
 
 namespace webApi.Controllers
 {

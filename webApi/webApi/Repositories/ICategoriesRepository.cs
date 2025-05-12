@@ -7,6 +7,7 @@ namespace webApi.Repositories
         Task<IEnumerable<Categories>> GetCategoriesAsync();
         Task<Categories> GetCategoriesByIdAsync(int id);
         Task AddCategoriesAsync(Categories Categories);
+        Task AddCategoriesBatchAsync(IEnumerable<Categories> categories);
         Task UpdateCategoriesAsync(Categories Categories);
         Task DeleteCategoriesAsync(int id);
     }

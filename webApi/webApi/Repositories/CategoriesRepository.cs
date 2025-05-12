@@ -25,6 +25,12 @@ namespace webApi.Repositories
             await _context.SaveChangesAsync();
         }
 
+        public async Task AddCategoriesBatchAsync(IEnumerable<Categories> categories)
+        {
+            await _context.Categories.AddRangeAsync(categories);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task UpdateCategoriesAsync(Categories Categories)
         {
             _context.Entry(Categories).State = EntityState.Modified;
