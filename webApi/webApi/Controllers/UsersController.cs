@@ -399,6 +399,13 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
+
+        [HttpGet("{id}/progress")]
+        public async Task<IActionResult> GetAllCourseProgress(string id)
+        {
+            var result = await _userRepository.GetAllCourseProgressAsync(id);
+            return Ok(result);
+        }
     }
 
     public class FavoriteCourseDto

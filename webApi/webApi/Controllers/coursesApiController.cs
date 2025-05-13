@@ -181,5 +181,11 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+        [HttpGet("{id}/overview")]
+        public async Task<IActionResult> GetCourseOverview(int id)
+        {
+            var overview = await _coursesRepository.GetCourseOverviewAsync(id);
+            return Ok(overview);
+        }
     }
 }

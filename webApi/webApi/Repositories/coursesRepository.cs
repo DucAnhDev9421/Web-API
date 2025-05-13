@@ -270,5 +270,22 @@ namespace webApi.Repositories
                      (c.Description != null && c.Description.ToLower().Contains(query))))
                 .ToListAsync();
         }
+
+        public async Task<List<CourseVideoOverviewDto>> GetCourseOverviewAsync(int courseId)
+        {
+            var videos = await _context.Videos.Where(v => v.CourseId == courseId).ToListAsync();
+            var videoIds = videos.Select(v => v.Id).ToList();
+            var progresses = await _context.VideoProgresses
+                .Where(p => videoIds.Contains(p.VideoId) && p.ProgressPercentage > 0)
+                .ToListAsync();
+            var result = videos.Select(v => new CourseVideoOverviewDto
+            {
+                VideoId = v.Id,
+                Title = v.Title,
+                ViewCount = v.ViewCount,
+                LearnedCount = progresses.Count(p => p.VideoId == v.Id)
+            }).ToList();
+            return result;
+        }
     }
 }

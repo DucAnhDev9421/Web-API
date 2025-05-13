@@ -68,5 +68,75 @@ namespace webApi.Repositories
                 await _context.SaveChangesAsync();
             }
         }
+
+        public async Task IncrementViewCountAsync(int id)
+        {
+            var video = await _context.Set<Video>().FindAsync(id);
+            if (video != null)
+            {
+                video.ViewCount++;
+                _context.Entry(video).State = EntityState.Modified;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task<VideoProgress> GetVideoProgressAsync(int videoId, string userId)
+        {
+            return await _context.Set<VideoProgress>()
+                .FirstOrDefaultAsync(vp => vp.VideoId == videoId && vp.UserId == userId);
+        }
+
+        public async Task TrackVideoProgressAsync(int videoId, string userId, int progressPercentage)
+        {
+            var progress = await _context.Set<VideoProgress>()
+                .FirstOrDefaultAsync(vp => vp.VideoId == videoId && vp.UserId == userId);
+            if (progress == null)
+            {
+                progress = new VideoProgress
+                {
+                    VideoId = videoId,
+                    UserId = userId,
+                    ProgressPercentage = progressPercentage,
+                    LastWatchedAt = DateTime.UtcNow
+                };
+                await _context.Set<VideoProgress>().AddAsync(progress);
+            }
+            else
+            {
+                progress.ProgressPercentage = progressPercentage;
+                progress.LastWatchedAt = DateTime.UtcNow;
+                _context.Entry(progress).State = EntityState.Modified;
+            }
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task<List<Video>> GetPopularVideosAsync(int top = 10)
+        {
+            return await _context.Set<Video>()
+                .OrderByDescending(v => v.ViewCount)
+                .ThenByDescending(v => v.CreatedAt)
+                .Take(top)
+                .ToListAsync();
+        }
+
+        public async Task<Video> GetNextVideoAsync(int currentVideoId)
+        {
+            var current = await _context.Set<Video>().FindAsync(currentVideoId);
+            if (current == null) return null;
+            return await _context.Set<Video>()
+                .Where(v => v.CourseId == current.CourseId && v.Order > current.Order)
+                .OrderBy(v => v.Order)
+                .FirstOrDefaultAsync();
+        }
+
+        public async Task<Video> GetPreviousVideoAsync(int currentVideoId)
+        {
+            var current = await _context.Set<Video>().FindAsync(currentVideoId);
+            if (current == null) return null;
+            return await _context.Set<Video>()
+                .Where(v => v.CourseId == current.CourseId && v.Order < current.Order)
+                .OrderByDescending(v => v.Order)
+                .FirstOrDefaultAsync();
+        }
     }
 }

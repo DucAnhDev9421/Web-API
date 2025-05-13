@@ -18,6 +18,8 @@ namespace webApi.Model
         public DbSet<Rating> Ratings { get; set; }
         public DbSet<UserFavoriteCourse> UserFavoriteCourses { get; set; }
         public DbSet<RelatedCourse> RelatedCourses { get; set; }
+        public DbSet<VideoProgress> VideoProgresses { get; set; }
+        public DbSet<Enrollment> Enrollments { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
