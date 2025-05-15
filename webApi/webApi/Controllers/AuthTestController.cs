@@ -11,14 +11,9 @@ namespace webApi.Controllers
         [Authorize]
         public IActionResult TestAuth()
         {
-            // Lấy thông tin user từ token
-            var userId = User.Claims.FirstOrDefault(c => c.Type == "sub")?.Value;
-
             return Ok(new
             {
-                message = "Token hợp lệ!",
-                userId
-               
+                message = "Token hợp lệ!"
             });
         }
     }

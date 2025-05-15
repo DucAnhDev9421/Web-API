@@ -47,19 +47,24 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Courses API", Version = "v1" });
+    
+    // Add JWT Authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "Nhập token với định dạng: Bearer {token}",
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
         Name = "Authorization",
         In = ParameterLocation.Header,
         Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer",
-        BearerFormat = "JWT"
+        Scheme = "Bearer"
     });
+
     c.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
-            new OpenApiSecurityScheme { Reference = new OpenApiReference
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
                 {
                     Type = ReferenceType.SecurityScheme,
                     Id = "Bearer"
@@ -100,13 +105,29 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Courses API V1");
+        c.RoutePrefix = string.Empty; // Set Swagger as the default page
     });
 }
 
 app.UseHttpsRedirection();
 app.UseCors("AllowAll");
+
+// Add authentication middleware
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Add custom middleware for Clerk token validation
+app.Use(async (context, next) =>
+{
+    var token = context.Request.Headers["Authorization"].ToString().Replace("Bearer ", "");
+    if (!string.IsNullOrEmpty(token))
+    {
+        // Token validation is handled by the JWT middleware
+        // You can add additional custom validation here if needed
+    }
+    await next();
+});
+
 app.MapControllers();
 
 app.Run();

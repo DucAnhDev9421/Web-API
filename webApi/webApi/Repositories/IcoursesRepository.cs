@@ -11,10 +11,26 @@ namespace webApi.Repositories
         public int ViewCount { get; set; }
         public int LearnedCount { get; set; }
     }
+
+    public class CourseWithCategoryDto
+    {
+        public int Id { get; set; }
+        public string Name { get; set; }
+        public decimal Price { get; set; }
+        public string Description { get; set; }
+        public string ImageUrl { get; set; }
+        public CourseStatus Status { get; set; }
+        public string StatusText { get; set; }
+        public CourseLevel Level { get; set; }
+        public string LevelText { get; set; }
+        public int? CategoryId { get; set; }
+        public string CategoryName { get; set; }
+    }
+
     public interface IcoursesRepository
     {
-        Task<IEnumerable<courses>> GetcoursesAsync();
-        Task<courses> GetcoursesByIdAsync(int id);
+        Task<IEnumerable<CourseWithCategoryDto>> GetcoursesAsync();
+        Task<CourseWithCategoryDto> GetcoursesByIdAsync(int id);
         Task AddcoursesAsync(courses courses);
         Task UpdatecoursesAsync(courses courses);
         Task DeletecoursesAsync(int id);

@@ -62,6 +62,9 @@ namespace webApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -71,6 +74,9 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -83,6 +89,8 @@ namespace webApi.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("courses");
                 });
@@ -405,6 +413,15 @@ namespace webApi.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("Related");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
+                {
+                    b.HasOne("webApi.Model.CategoryModel.Categories", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("webApi.Model.Enrollment", b =>

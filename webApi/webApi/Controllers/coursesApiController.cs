@@ -2,6 +2,8 @@
 using Microsoft.AspNetCore.Mvc;
 using webApi.Model.CourseModel;
 using webApi.Repositories;
+using Microsoft.EntityFrameworkCore;
+using webApi.Model;
 
 namespace webApi.Controllers
 {
@@ -11,9 +13,11 @@ namespace webApi.Controllers
     {
 
         private readonly IcoursesRepository _coursesRepository;
-        public coursesApiController(IcoursesRepository coursesRepository)
+        private readonly ApplicationDbContext _context;
+        public coursesApiController(IcoursesRepository coursesRepository, ApplicationDbContext context)
         {
             _coursesRepository = coursesRepository;
+            _context = context;
         }
         //Lây danh sách tất cả các khóa học
         [HttpGet]
@@ -74,6 +78,17 @@ namespace webApi.Controllers
             {
                 if (id != courses.Id)
                     return BadRequest();
+
+                // Kiểm tra CategoryId nếu được cung cấp
+                if (courses.CategoryId.HasValue)
+                {
+                    var categoryExists = await _context.Categories.AnyAsync(c => c.Id == courses.CategoryId.Value);
+                    if (!categoryExists)
+                    {
+                        return BadRequest("Category not found");
+                    }
+                }
+
                 await _coursesRepository.UpdatecoursesAsync(courses);
                 return NoContent();
             }
