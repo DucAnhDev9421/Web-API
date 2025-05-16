@@ -76,6 +76,9 @@ namespace webApi.Controllers
                     userData.Email = $"{id}@temp.com";
                 }
 
+                // Lấy role từ public_metadata
+                userData.Role = userData.PublicMetadata?.Role ?? "user";
+
                 // Đảm bảo các trường bắt buộc không null
                 userData.Username ??= id;
                 userData.FirstName ??= string.Empty;
@@ -132,7 +135,11 @@ namespace webApi.Controllers
                     first_name = updateDto.FirstName,
                     last_name = updateDto.LastName,
                     image_url = updateDto.ImageUrl,
-                    profile_image_url = updateDto.ProfileImageUrl
+                    profile_image_url = updateDto.ProfileImageUrl,
+                    public_metadata = new
+                    {
+                        role = updateDto.Role
+                    }
                 };
 
                 var content = new StringContent(
@@ -154,6 +161,7 @@ namespace webApi.Controllers
                 userFromDb.LastName = updateDto.LastName;
                 userFromDb.ImageUrl = updateDto.ImageUrl;
                 userFromDb.ProfileImageUrl = updateDto.ProfileImageUrl;
+                userFromDb.Role = updateDto.Role;
                 userFromDb.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(userFromDb);
@@ -406,11 +414,40 @@ namespace webApi.Controllers
             var result = await _userRepository.GetAllCourseProgressAsync(id);
             return Ok(result);
         }
+
+        [HttpGet("{id}/role")]
+        public async Task<IActionResult> GetUserRole(string id)
+        {
+            try
+            {
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                return Ok(new { role = user.Role ?? "user" });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
     }
 
     public class FavoriteCourseDto
     {
         public int CourseId { get; set; }
+    }
+
+    public class UserUpdateDto
+    {
+        public string Username { get; set; }
+        public string FirstName { get; set; }
+        public string LastName { get; set; }
+        public string ImageUrl { get; set; }
+        public string ProfileImageUrl { get; set; }
+        public string Role { get; set; }
     }
 
     public class CreateUserNoteDto

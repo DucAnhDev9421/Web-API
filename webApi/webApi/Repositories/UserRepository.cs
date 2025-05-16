@@ -36,6 +36,7 @@ namespace webApi.Repositories
                 existingUser.LastName = user.LastName;
                 existingUser.ImageUrl = user.ImageUrl;
                 existingUser.ProfileImageUrl = user.ProfileImageUrl;
+                existingUser.Role = user.Role;
                 existingUser.UpdatedAt = DateTime.UtcNow;
             }
 
@@ -97,6 +98,7 @@ namespace webApi.Repositories
                 LastName = user.LastName,
                 ImageUrl = user.ImageUrl,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 Stats = new UserStatsDto

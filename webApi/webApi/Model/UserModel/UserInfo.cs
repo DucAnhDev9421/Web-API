@@ -41,6 +41,14 @@ namespace webApi.Model.UserModel
         [JsonPropertyName("profile_image_url")]
         public string ProfileImageUrl { get; set; }
 
+        [StringLength(50)]
+        [JsonPropertyName("role")]
+        public string Role { get; set; }
+
+        [JsonPropertyName("public_metadata")]
+        [NotMapped]
+        public PublicMetadata PublicMetadata { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
     }
@@ -49,5 +57,11 @@ namespace webApi.Model.UserModel
     {
         [JsonPropertyName("email_address")]
         public string Email { get; set; }
+    }
+
+    public class PublicMetadata
+    {
+        [JsonPropertyName("role")]
+        public string Role { get; set; }
     }
 } 
