@@ -5,7 +5,7 @@
 namespace webApi.Migrations
 {
     /// <inheritdoc />
-    public partial class UserRole : Migration
+    public partial class Getrole : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -13,8 +13,8 @@ namespace webApi.Migrations
             migrationBuilder.AddColumn<string>(
                 name: "Role",
                 table: "Users",
-                type: "nvarchar(20)",
-                maxLength: 20,
+                type: "nvarchar(50)",
+                maxLength: 50,
                 nullable: false,
                 defaultValue: "");
         }

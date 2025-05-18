@@ -14,14 +14,50 @@ namespace webApi.Repositories
             _context = context;
         }
 
-        public async Task<IEnumerable<courses>> GetcoursesAsync()
+        public async Task<IEnumerable<CourseWithCategoryDto>> GetcoursesAsync()
         {
-            return await _context.courses.ToListAsync();
+            return await _context.courses
+                .Include(c => c.Category)
+                .Select(c => new CourseWithCategoryDto
+                {
+                    Id = c.Id,
+                    Name = c.Name,
+                    Price = c.Price,
+                    Description = c.Description,
+                    ImageUrl = c.ImageUrl,
+                    Status = c.Status,
+                    StatusText = c.StatusText,
+                    Level = c.Level,
+                    LevelText = c.LevelText,
+                    CategoryId = c.CategoryId,
+                    CategoryName = c.Category != null ? c.Category.Name : null
+                })
+                .ToListAsync();
         }
 
-        public async Task<courses> GetcoursesByIdAsync(int id)
+        public async Task<CourseWithCategoryDto> GetcoursesByIdAsync(int id)
         {
-            return await _context.courses.FindAsync(id);
+            var course = await _context.courses
+                .Include(c => c.Category)
+                .FirstOrDefaultAsync(c => c.Id == id);
+
+            if (course == null)
+                return null;
+
+            return new CourseWithCategoryDto
+            {
+                Id = course.Id,
+                Name = course.Name,
+                Price = course.Price,
+                Description = course.Description,
+                ImageUrl = course.ImageUrl,
+                Status = course.Status,
+                StatusText = course.StatusText,
+                Level = course.Level,
+                LevelText = course.LevelText,
+                CategoryId = course.CategoryId,
+                CategoryName = course.Category != null ? course.Category.Name : null
+            };
         }
 
         public async Task AddcoursesAsync(courses courses)
@@ -269,6 +305,23 @@ namespace webApi.Repositories
                     (c.Name.ToLower().Contains(query) || 
                      (c.Description != null && c.Description.ToLower().Contains(query))))
                 .ToListAsync();
+        }
+
+        public async Task<List<CourseVideoOverviewDto>> GetCourseOverviewAsync(int courseId)
+        {
+            var videos = await _context.Videos.Where(v => v.CourseId == courseId).ToListAsync();
+            var videoIds = videos.Select(v => v.Id).ToList();
+            var progresses = await _context.VideoProgresses
+                .Where(p => videoIds.Contains(p.VideoId) && p.ProgressPercentage > 0)
+                .ToListAsync();
+            var result = videos.Select(v => new CourseVideoOverviewDto
+            {
+                VideoId = v.Id,
+                Title = v.Title,
+                ViewCount = v.ViewCount,
+                LearnedCount = progresses.Count(p => p.VideoId == v.Id)
+            }).ToList();
+            return result;
         }
     }
 }

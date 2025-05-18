@@ -5,25 +5,24 @@
 namespace webApi.Migrations
 {
     /// <inheritdoc />
-    public partial class CorsesUpdate : Migration
+    public partial class AddCoureLevel : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.AddColumn<string>(
-                name: "ImageUrl",
+            migrationBuilder.AddColumn<int>(
+                name: "Level",
                 table: "courses",
-                type: "nvarchar(500)",
-                maxLength: 500,
+                type: "int",
                 nullable: false,
-                defaultValue: "");
+                defaultValue: 0);
         }
 
         /// <inheritdoc />
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "ImageUrl",
+                name: "Level",
                 table: "courses");
         }
     }

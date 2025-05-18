@@ -36,6 +36,7 @@ namespace webApi.Repositories
                 existingUser.LastName = user.LastName;
                 existingUser.ImageUrl = user.ImageUrl;
                 existingUser.ProfileImageUrl = user.ProfileImageUrl;
+                existingUser.Role = user.Role;
                 existingUser.UpdatedAt = DateTime.UtcNow;
             }
 
@@ -97,6 +98,7 @@ namespace webApi.Repositories
                 LastName = user.LastName,
                 ImageUrl = user.ImageUrl,
                 ProfileImageUrl = user.ProfileImageUrl,
+                Role = user.Role,
                 CreatedAt = user.CreatedAt,
                 UpdatedAt = user.UpdatedAt,
                 Stats = new UserStatsDto
@@ -164,6 +166,35 @@ namespace webApi.Repositories
         {
             return await _context.UserFavoriteCourses
                 .AnyAsync(f => f.UserId == userId && f.CourseId == courseId);
+        }
+
+        public async Task<List<UserCourseProgressDto>> GetAllCourseProgressAsync(string userId)
+        {
+            var enrollments = await _context.Enrollments
+                .Where(e => e.UserId == userId)
+                .Include(e => e.Course)
+                .ToListAsync();
+
+            var progresses = await _context.UserCourseProgress
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+
+            var result = enrollments.Select(e => {
+                var progress = progresses.FirstOrDefault(p => p.CourseId == e.CourseId);
+                double percent = (progress != null && progress.TotalVideos > 0)
+                    ? (double)progress.CompletedVideos / progress.TotalVideos * 100
+                    : 0;
+                string status = percent >= 100 ? "completed" : (percent <= 0 ? "not_started" : "in_progress");
+                return new UserCourseProgressDto
+                {
+                    CourseId = e.CourseId,
+                    Name = e.Course?.Name,
+                    ProgressPercentage = percent,
+                    LastActivityAt = progress?.LastAccessed,
+                    CompletionStatus = status
+                };
+            }).ToList();
+            return result;
         }
     }
 } 

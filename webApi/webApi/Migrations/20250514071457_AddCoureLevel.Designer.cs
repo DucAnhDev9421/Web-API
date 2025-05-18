@@ -12,8 +12,8 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250510080244_Admin")]
-    partial class Admin
+    [Migration("20250514071457_AddCoureLevel")]
+    partial class AddCoureLevel
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,7 +25,7 @@ namespace webApi.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("webApi.Model.Categories", b =>
+            modelBuilder.Entity("webApi.Model.CategoryModel.Categories", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -42,6 +42,84 @@ namespace webApi.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
+                {
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("RelatedCourseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CourseId", "RelatedCourseId");
+
+                    b.HasIndex("RelatedCourseId");
+
+                    b.ToTable("RelatedCourses");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<int>("Level")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("Price")
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("courses");
+                });
+
+            modelBuilder.Entity("webApi.Model.Enrollment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("EnrolledAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Enrollments");
+                });
+
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
                     b.Property<int>("Id")
@@ -54,14 +132,26 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<int>("VideoId")
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("UserId");
 
                     b.HasIndex("VideoId");
 
@@ -105,7 +195,7 @@ namespace webApi.Migrations
                     b.ToTable("Ratings");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserCourseProgress", b =>
+            modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -144,7 +234,36 @@ namespace webApi.Migrations
                     b.ToTable("UserCourseProgress");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserInfo", b =>
+            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.HasIndex("UserId", "CourseId")
+                        .IsUnique();
+
+                    b.ToTable("UserFavoriteCourses");
+                });
+
+            modelBuilder.Entity("webApi.Model.UserModel.UserInfo", b =>
                 {
                     b.Property<string>("Id")
                         .HasMaxLength(450)
@@ -209,15 +328,25 @@ namespace webApi.Migrations
                     b.Property<int>("CourseId")
                         .HasColumnType("int");
 
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Duration")
+                        .HasColumnType("int");
 
                     b.Property<bool>("IsVisible")
                         .HasColumnType("bit");
 
                     b.Property<int>("Order")
                         .HasColumnType("int");
+
+                    b.Property<string>("Thumbnail")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Title")
                         .IsRequired()
@@ -227,12 +356,15 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ViewCount")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.ToTable("Videos");
                 });
 
-            modelBuilder.Entity("webApi.Model.courses", b =>
+            modelBuilder.Entity("webApi.Model.VideoProgress", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -240,43 +372,94 @@ namespace webApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(500)
-                        .HasColumnType("nvarchar(500)");
+                    b.Property<DateTime>("LastWatchedAt")
+                        .HasColumnType("datetime2");
 
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("ProgressPercentage")
+                        .HasColumnType("int");
 
-                    b.Property<decimal>("Price")
-                        .HasColumnType("decimal(18,2)");
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("VideoId")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
-                    b.ToTable("courses");
+                    b.HasIndex("UserId");
+
+                    b.HasIndex("VideoId");
+
+                    b.ToTable("VideoProgresses");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.CourseModel.courses", "Related")
+                        .WithMany()
+                        .HasForeignKey("RelatedCourseId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("Related");
+                });
+
+            modelBuilder.Entity("webApi.Model.Enrollment", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("webApi.Model.Video", "Video")
                         .WithMany()
                         .HasForeignKey("VideoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.Navigation("User");
+
                     b.Navigation("Video");
                 });
 
             modelBuilder.Entity("webApi.Model.Rating", b =>
                 {
-                    b.HasOne("webApi.Model.courses", "Course")
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.UserInfo", "User")
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -287,15 +470,15 @@ namespace webApi.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("webApi.Model.UserCourseProgress", b =>
+            modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
                 {
-                    b.HasOne("webApi.Model.courses", "Course")
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
                         .WithMany()
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.UserInfo", "User")
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -304,6 +487,44 @@ namespace webApi.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("webApi.Model.UserModel.UserFavoriteCourse", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("webApi.Model.VideoProgress", b =>
+                {
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.Video", "Video")
+                        .WithMany()
+                        .HasForeignKey("VideoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+
+                    b.Navigation("Video");
                 });
 #pragma warning restore 612, 618
         }
