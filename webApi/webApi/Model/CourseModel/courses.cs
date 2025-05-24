@@ -56,6 +56,8 @@ namespace webApi.Model.CourseModel
         [ForeignKey("CategoryId")]
         [JsonIgnore]
         public Categories? Category { get; set; }
+
+        public ICollection<Section> Sections { get; set; }
     }
 
 

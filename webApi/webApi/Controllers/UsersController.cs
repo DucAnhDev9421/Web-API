@@ -254,13 +254,16 @@ namespace webApi.Controllers
         {
             try
             {
-                var profile = await _userRepository.GetUserProfileAsync(id);
-                if (profile == null)
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
                 {
                     return NotFound("Không tìm thấy người dùng");
                 }
 
-                return Ok(profile);
+                return Ok(new {
+                    firstName = user.FirstName,
+                    lastName = user.LastName
+                });
             }
             catch (Exception ex)
             {
@@ -433,6 +436,68 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
+
+        [HttpPatch("{id}/profile")]
+        public async Task<IActionResult> UpdateUserProfile(string id, [FromBody] UpdateProfileDto updateDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Kiểm tra user tồn tại
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Cập nhật thông tin từ Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+
+                // Tạo request body cho Clerk API
+                var updateData = new
+                {
+                    first_name = updateDto.FirstName,
+                    last_name = updateDto.LastName
+                };
+
+                var content = new StringContent(
+                    JsonSerializer.Serialize(updateData),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await client.PatchAsync($"users/{id}", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không thể cập nhật thông tin người dùng trên Clerk");
+                }
+
+                // Cập nhật thông tin trong database
+                user.FirstName = updateDto.FirstName;
+                user.LastName = updateDto.LastName;
+                user.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.CreateOrUpdateUserAsync(user);
+
+                return Ok(new {
+                    firstName = user.FirstName,
+                    lastName = user.LastName,
+                    message = "Cập nhật thông tin thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
     }
 
     public class FavoriteCourseDto
@@ -459,5 +524,14 @@ namespace webApi.Controllers
 
         [Required(ErrorMessage = "VideoId không được để trống")]
         public int VideoId { get; set; }
+    }
+
+    public class UpdateProfileDto
+    {
+        [Required(ErrorMessage = "Tên không được để trống")]
+        public string FirstName { get; set; }
+
+        [Required(ErrorMessage = "Họ không được để trống")]
+        public string LastName { get; set; }
     }
 } 

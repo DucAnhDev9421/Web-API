@@ -20,6 +20,8 @@ namespace webApi.Model
         public DbSet<RelatedCourse> RelatedCourses { get; set; }
         public DbSet<VideoProgress> VideoProgresses { get; set; }
         public DbSet<Enrollment> Enrollments { get; set; }
+        public DbSet<Section> Sections { get; set; }
+        public DbSet<Lesson> Lessons { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
