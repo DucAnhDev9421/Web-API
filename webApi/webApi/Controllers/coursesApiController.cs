@@ -40,16 +40,45 @@ namespace webApi.Controllers
         {
             try
             {
-                var courses = await _coursesRepository.GetcoursesByIdAsync(id);
-                if (courses == null)
-                    return NotFound();
+                var course = await _context.courses
+                    .Include(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
-                return Ok(courses);
+                if (course == null)
+                    return NotFound("Không tìm thấy khóa học");
+
+                var response = new CourseResponseDto
+                {
+                    Id = course.Id,
+                    Name = course.Name,
+                    Price = course.Price,
+                    Description = course.Description,
+                    ImageUrl = course.ImageUrl,
+                    Status = (int)course.Status,
+                    StatusText = course.StatusText,
+                    Level = (int)course.Level,
+                    LevelText = course.LevelText,
+                    CategoryId = course.CategoryId,
+                    Sections = course.Sections?.Select(s => new SectionResponseDto
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        Lessons = s.Lessons?.Select(l => new LessonResponseDto
+                        {
+                            Id = l.Id,
+                            Title = l.Title,
+                            Type = (int)l.Type,
+                            Content = l.Content
+                        }).ToList()
+                    }).ToList()
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                // Handle exception 
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
         //Thêm khóa học
