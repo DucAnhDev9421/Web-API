@@ -8,5 +8,8 @@ namespace webApi.Model.CategoryModel
 
         [Required]
         public string Name { get; set; }
+
+        [StringLength(500)]
+        public string Description { get; set; }
     }
 }

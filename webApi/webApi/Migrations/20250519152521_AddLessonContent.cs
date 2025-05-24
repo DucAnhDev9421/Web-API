@@ -5,16 +5,15 @@
 namespace webApi.Migrations
 {
     /// <inheritdoc />
-    public partial class Getrole : Migration
+    public partial class AddLessonContent : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AddColumn<string>(
-                name: "Role",
-                table: "Users",
-                type: "nvarchar(50)",
-                maxLength: 50,
+                name: "Content",
+                table: "Lessons",
+                type: "nvarchar(max)",
                 nullable: false,
                 defaultValue: "");
         }
@@ -23,8 +22,8 @@ namespace webApi.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "Role",
-                table: "Users");
+                name: "Content",
+                table: "Lessons");
         }
     }
 }

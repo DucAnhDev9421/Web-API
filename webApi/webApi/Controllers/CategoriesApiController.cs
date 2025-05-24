@@ -62,7 +62,7 @@ namespace webApi.Controllers
                 var newCategory = new Categories
                 {
                     Name = categories.Name,
-                    // Gán tất cả các thuộc tính khác
+                    Description = categories.Description
                 };
 
                 await _categoriesRepository.AddCategoriesAsync(newCategory);
@@ -140,6 +140,7 @@ namespace webApi.Controllers
 
                 // Update category properties
                 existingCategory.Name = categories.Name.Trim();
+                existingCategory.Description = categories.Description;
 
                 await _categoriesRepository.UpdateCategoriesAsync(existingCategory);
                 return Ok(new { 

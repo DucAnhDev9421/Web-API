@@ -12,8 +12,8 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250514071650_AddCoureLevel2")]
-    partial class AddCoureLevel2
+    [Migration("20250518062632_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -65,6 +65,9 @@ namespace webApi.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CategoryId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Description")
                         .IsRequired()
                         .HasMaxLength(500)
@@ -89,6 +92,8 @@ namespace webApi.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CategoryId");
 
                     b.ToTable("courses");
                 });
@@ -303,6 +308,12 @@ namespace webApi.Migrations
                         .HasColumnType("nvarchar(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "profile_image_url");
 
+                    b.Property<string>("Role")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)")
+                        .HasAnnotation("Relational:JsonPropertyName", "role");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("datetime2");
 
@@ -411,6 +422,15 @@ namespace webApi.Migrations
                     b.Navigation("Course");
 
                     b.Navigation("Related");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
+                {
+                    b.HasOne("webApi.Model.CategoryModel.Categories", "Category")
+                        .WithMany()
+                        .HasForeignKey("CategoryId");
+
+                    b.Navigation("Category");
                 });
 
             modelBuilder.Entity("webApi.Model.Enrollment", b =>

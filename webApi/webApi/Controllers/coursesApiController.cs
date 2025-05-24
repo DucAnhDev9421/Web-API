@@ -40,34 +40,155 @@ namespace webApi.Controllers
         {
             try
             {
-                var courses = await _coursesRepository.GetcoursesByIdAsync(id);
-                if (courses == null)
-                    return NotFound();
+                var course = await _context.courses
+                    .Include(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
-                return Ok(courses);
+                if (course == null)
+                    return NotFound("Không tìm thấy khóa học");
+
+                var response = new CourseResponseDto
+                {
+                    Id = course.Id,
+                    Name = course.Name,
+                    Price = course.Price,
+                    Description = course.Description,
+                    ImageUrl = course.ImageUrl,
+                    Status = (int)course.Status,
+                    StatusText = course.StatusText,
+                    Level = (int)course.Level,
+                    LevelText = course.LevelText,
+                    CategoryId = course.CategoryId,
+                    Sections = course.Sections?.Select(s => new SectionResponseDto
+                    {
+                        Id = s.Id,
+                        Title = s.Title,
+                        Lessons = s.Lessons?.Select(l => new LessonResponseDto
+                        {
+                            Id = l.Id,
+                            Title = l.Title,
+                            Type = (int)l.Type,
+                            Content = l.Content
+                        }).ToList()
+                    }).ToList()
+                };
+
+                return Ok(response);
             }
             catch (Exception ex)
             {
-                // Handle exception 
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
         //Thêm khóa học
         [HttpPost]
-        public async Task<IActionResult> Addcourses([FromBody] courses courses)
+        public async Task<IActionResult> Addcourses([FromBody] CourseCreateDto dto)
         {
             try
             {
-                if (!ModelState.IsValid)
-                    return BadRequest(ModelState);
+                // Kiểm tra dữ liệu đầu vào
+                if (dto == null)
+                    return BadRequest("Dữ liệu khóa học không được để trống");
 
-                await _coursesRepository.AddcoursesAsync(courses);
-                return CreatedAtAction(nameof(GetcoursesById), new { id = courses.Id }, courses);
+                if (string.IsNullOrWhiteSpace(dto.Name))
+                    return BadRequest("Tên khóa học không được để trống");
+
+                if (dto.Price < 0)
+                    return BadRequest("Giá khóa học không được âm");
+
+                if (string.IsNullOrWhiteSpace(dto.Description))
+                    return BadRequest("Mô tả khóa học không được để trống");
+
+                if (string.IsNullOrWhiteSpace(dto.ImageUrl))
+                    return BadRequest("URL hình ảnh không được để trống");
+
+                // Kiểm tra độ dài mô tả và URL hình ảnh
+                if (dto.Description.Length > 500)
+                    return BadRequest("Mô tả khóa học không được vượt quá 500 ký tự");
+
+                if (dto.ImageUrl.Length > 500)
+                    return BadRequest("URL hình ảnh không được vượt quá 500 ký tự");
+
+                // Kiểm tra CategoryId nếu được cung cấp
+                if (dto.CategoryId.HasValue)
+                {
+                    var categoryExists = await _context.Categories.AnyAsync(c => c.Id == dto.CategoryId.Value);
+                    if (!categoryExists)
+                    {
+                        return BadRequest("Danh mục không tồn tại");
+                    }
+                }
+
+                // Kiểm tra trạng thái và cấp độ
+                if (!Enum.IsDefined(typeof(CourseStatus), dto.Status))
+                    return BadRequest("Trạng thái khóa học không hợp lệ");
+
+                if (!Enum.IsDefined(typeof(CourseLevel), dto.Level))
+                    return BadRequest("Cấp độ khóa học không hợp lệ");
+
+                // Tạo entity khóa học kèm chương trình học
+                var course = new courses
+                {
+                    Name = dto.Name,
+                    Price = dto.Price,
+                    Description = dto.Description,
+                    ImageUrl = dto.ImageUrl,
+                    Status = (CourseStatus)dto.Status,
+                    Level = (CourseLevel)dto.Level,
+                    CategoryId = dto.CategoryId,
+                    Sections = dto.Sections?.Select(s => new Section
+                    {
+                        Title = s.Title,
+                        Lessons = s.Lessons?.Select(l => new Lesson
+                        {
+                            Title = l.Title,
+                            Type = (LessonType)l.Type,
+                            Content = l.Content
+                        }).ToList()
+                    }).ToList()
+                };
+
+                _context.courses.Add(course);
+                await _context.SaveChangesAsync();
+                return CreatedAtAction(nameof(GetcoursesById), new { id = course.Id }, new {
+                    message = "Tạo khóa học thành công",
+                    course = new CourseResponseDto
+                    {
+                        Id = course.Id,
+                        Name = course.Name,
+                        Price = course.Price,
+                        Description = course.Description,
+                        ImageUrl = course.ImageUrl,
+                        Status = (int)course.Status,
+                        StatusText = course.StatusText,
+                        Level = (int)course.Level,
+                        LevelText = course.LevelText,
+                        CategoryId = course.CategoryId,
+                        Sections = course.Sections?.Select(s => new SectionResponseDto
+                        {
+                            Id = s.Id,
+                            Title = s.Title,
+                            Lessons = s.Lessons?.Select(l => new LessonResponseDto
+                            {
+                                Id = l.Id,
+                                Title = l.Title,
+                                Type = (int)l.Type,
+                                Content = l.Content
+                            }).ToList()
+                        }).ToList()
+                    }
+                });
+            }
+            catch (DbUpdateException ex)
+            {
+                // Log lỗi database
+                return StatusCode(500, "Lỗi khi lưu dữ liệu vào database: " + ex.Message);
             }
             catch (Exception ex)
             {
-                // Log lỗi ở đây
-                return StatusCode(500, $"Internal server error: {ex.Message}");
+                // Log lỗi khác
+                return StatusCode(500, "Lỗi server: " + ex.Message);
             }
         }
         //Cập nhật khóa học
