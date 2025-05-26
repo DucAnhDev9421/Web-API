@@ -5,6 +5,7 @@ namespace webApi.Controllers
 {
     [Route("api/auth")]
     [ApiController]
+    [Authorize]
     public class AuthTestController : ControllerBase
     {
         [HttpGet("test")]

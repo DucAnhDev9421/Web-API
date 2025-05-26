@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using webApi.Model.CartModel;
 using webApi.Model.CategoryModel;
 using webApi.Model.CourseModel;
 using webApi.Model.UserModel;
@@ -22,6 +23,8 @@ namespace webApi.Model
         public DbSet<Enrollment> Enrollments { get; set; }
         public DbSet<Section> Sections { get; set; }
         public DbSet<Lesson> Lessons { get; set; }
+        public DbSet<Cart> Carts { get; set; }
+        public DbSet<CartItem> CartItems { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

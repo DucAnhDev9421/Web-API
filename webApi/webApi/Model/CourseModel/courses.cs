@@ -40,6 +40,8 @@ namespace webApi.Model.CourseModel
         [StringLength(500)]
         public string ImageUrl { get; set; }
 
+        public string VideoDemoUrl { get; set; }
+
         public CourseStatus Status { get; set; } = CourseStatus.Pending;
 
         [NotMapped]
