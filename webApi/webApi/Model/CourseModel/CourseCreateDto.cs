@@ -26,5 +26,6 @@ namespace webApi.Model.CourseModel
         public int Level { get; set; }
         public int? CategoryId { get; set; }
         public List<SectionCreateDto> Sections { get; set; }
+        public string InstructorId { get; set; }
     }
 } 

@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using webApi.Model.CategoryModel;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using webApi.Model.UserModel;
 
 namespace webApi.Model.CourseModel
 {
@@ -58,6 +59,11 @@ namespace webApi.Model.CourseModel
         [ForeignKey("CategoryId")]
         [JsonIgnore]
         public Categories? Category { get; set; }
+
+        public string? InstructorId { get; set; }
+        [ForeignKey("InstructorId")]
+        [JsonIgnore]
+        public UserInfo? Instructor { get; set; }
 
         public ICollection<Section> Sections { get; set; }
     }

@@ -180,6 +180,9 @@ namespace webApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("InstructorId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -200,6 +203,8 @@ namespace webApi.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("InstructorId");
 
                     b.ToTable("courses");
                 });
@@ -577,7 +582,13 @@ namespace webApi.Migrations
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId");
+
                     b.Navigation("Category");
+
+                    b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("webApi.Model.Enrollment", b =>

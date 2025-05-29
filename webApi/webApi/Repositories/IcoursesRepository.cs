@@ -25,6 +25,7 @@ namespace webApi.Repositories
         public string LevelText { get; set; }
         public int? CategoryId { get; set; }
         public string CategoryName { get; set; }
+        public InstructorInfo Instructor { get; set; }
     }
 
     public interface IcoursesRepository

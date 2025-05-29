@@ -36,6 +36,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         };
     });
 
+// Thêm cấu hình phân quyền
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdminRole", policy =>
+        policy.RequireRole("Admin"));
+});
+
 // Add HttpClient for Clerk
 builder.Services.AddHttpClient("Clerk", client =>
 {

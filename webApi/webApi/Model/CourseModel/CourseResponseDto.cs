@@ -31,5 +31,6 @@ namespace webApi.Model.CourseModel
         public string LevelText { get; set; }
         public int? CategoryId { get; set; }
         public List<SectionResponseDto> Sections { get; set; }
+        public InstructorInfo Instructor { get; set; }
     }
 } 

@@ -18,6 +18,7 @@ namespace webApi.Repositories
         {
             return await _context.courses
                 .Include(c => c.Category)
+                .Include(c => c.Instructor)
                 .Select(c => new CourseWithCategoryDto
                 {
                     Id = c.Id,
@@ -30,7 +31,13 @@ namespace webApi.Repositories
                     Level = c.Level,
                     LevelText = c.LevelText,
                     CategoryId = c.CategoryId,
-                    CategoryName = c.Category != null ? c.Category.Name : null
+                    CategoryName = c.Category != null ? c.Category.Name : null,
+                    Instructor = c.Instructor != null ? new InstructorInfo
+                    {
+                        Id = c.Instructor.Id,
+                        Username = c.Instructor.Username,
+                        ImageUrl = c.Instructor.ImageUrl
+                    } : null
                 })
                 .ToListAsync();
         }
@@ -39,6 +46,7 @@ namespace webApi.Repositories
         {
             var course = await _context.courses
                 .Include(c => c.Category)
+                .Include(c => c.Instructor)
                 .FirstOrDefaultAsync(c => c.Id == id);
 
             if (course == null)
@@ -56,7 +64,13 @@ namespace webApi.Repositories
                 Level = course.Level,
                 LevelText = course.LevelText,
                 CategoryId = course.CategoryId,
-                CategoryName = course.Category != null ? course.Category.Name : null
+                CategoryName = course.Category != null ? course.Category.Name : null,
+                Instructor = course.Instructor != null ? new InstructorInfo
+                {
+                    Id = course.Instructor.Id,
+                    Username = course.Instructor.Username,
+                    ImageUrl = course.Instructor.ImageUrl
+                } : null
             };
         }
 

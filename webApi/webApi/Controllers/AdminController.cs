@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using webApi.Repositories;
 using webApi.Model;
 
@@ -6,6 +7,7 @@ namespace webApi.Controllers
 {
     [Route("api/admin")]
     [ApiController]
+    [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private readonly IAdminRepository _adminRepository;
@@ -15,9 +17,18 @@ namespace webApi.Controllers
             _adminRepository = adminRepository;
         }
 
+        private bool IsAdmin()
+        {
+            return User.IsInRole("Admin");
+        }
+
         [HttpGet("overview")]
         public async Task<IActionResult> GetOverview()
         {
+            if (!IsAdmin())
+            {
+                return Forbid();
+            }
             try
             {
                 var overview = await _adminRepository.GetOverviewAsync();
