@@ -263,7 +263,9 @@ namespace webApi.Controllers
                 return Ok(new {
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    imageUrl = user.ImageUrl
+                    imageUrl = user.ImageUrl,
+                    jobTitle = user.JobTitle,
+                    bio = user.Bio
                 });
             }
             catch (Exception ex)
@@ -466,7 +468,10 @@ namespace webApi.Controllers
                 {
                     first_name = updateDto.FirstName,
                     last_name = updateDto.LastName,
-                    image_url = updateDto.ImageUrl
+                    public_metadata = new {
+                        jobTitle = updateDto.JobTitle,
+                        bio = updateDto.Bio
+                    }
                 };
 
                 var content = new StringContent(
@@ -485,7 +490,8 @@ namespace webApi.Controllers
                 // Cập nhật thông tin trong database
                 user.FirstName = updateDto.FirstName;
                 user.LastName = updateDto.LastName;
-                user.ImageUrl = updateDto.ImageUrl;
+                user.JobTitle = updateDto.JobTitle;
+                user.Bio = updateDto.Bio;
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(user);
@@ -493,7 +499,8 @@ namespace webApi.Controllers
                 return Ok(new {
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    imageUrl = user.ImageUrl,
+                    jobTitle = user.JobTitle,
+                    bio = user.Bio,
                     message = "Cập nhật thông tin thành công"
                 });
             }
@@ -639,7 +646,8 @@ namespace webApi.Controllers
         [Required(ErrorMessage = "Họ không được để trống")]
         public string LastName { get; set; }
 
-        public string ImageUrl { get; set; }
+        public string JobTitle { get; set; }
+        public string Bio { get; set; }
     }
 
     public class InstructorInfo

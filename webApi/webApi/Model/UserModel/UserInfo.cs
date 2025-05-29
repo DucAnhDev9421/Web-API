@@ -49,6 +49,12 @@ namespace webApi.Model.UserModel
         [NotMapped]
         public PublicMetadata PublicMetadata { get; set; }
 
+        [StringLength(100)]
+        public string JobTitle { get; set; }
+
+        [StringLength(1000)]
+        public string Bio { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
     }
