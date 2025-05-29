@@ -24,11 +24,13 @@ namespace webApi.Model.CourseModel
         public decimal Price { get; set; }
         public string Description { get; set; }
         public string ImageUrl { get; set; }
+        public string VideoDemoUrl { get; set; }
         public int Status { get; set; }
         public string StatusText { get; set; }
         public int Level { get; set; }
         public string LevelText { get; set; }
         public int? CategoryId { get; set; }
         public List<SectionResponseDto> Sections { get; set; }
+        public InstructorInfo Instructor { get; set; }
     }
 } 

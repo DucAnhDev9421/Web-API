@@ -12,8 +12,8 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250519124843_UpdateCategory")]
-    partial class UpdateCategory
+    [Migration("20250529072754_UpdateDatabase")]
+    partial class UpdateDatabase
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -24,6 +24,55 @@ namespace webApi.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("webApi.Model.CartModel.Cart", b =>
+                {
+                    b.Property<int>("CartId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartId"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("CartId");
+
+                    b.ToTable("Carts");
+                });
+
+            modelBuilder.Entity("webApi.Model.CartModel.CartItem", b =>
+                {
+                    b.Property<int>("CartItemId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("CartItemId"));
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CartId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.HasKey("CartItemId");
+
+                    b.HasIndex("CartId");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CartItems");
+                });
 
             modelBuilder.Entity("webApi.Model.CategoryModel.Categories", b =>
                 {
@@ -47,6 +96,35 @@ namespace webApi.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("webApi.Model.CourseModel.Lesson", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("SectionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Type")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("SectionId");
+
+                    b.ToTable("Lessons");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
                 {
                     b.Property<int>("CourseId")
@@ -60,6 +138,28 @@ namespace webApi.Migrations
                     b.HasIndex("RelatedCourseId");
 
                     b.ToTable("RelatedCourses");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.Section", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Sections");
                 });
 
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
@@ -83,6 +183,9 @@ namespace webApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<string>("InstructorId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<int>("Level")
                         .HasColumnType("int");
 
@@ -96,9 +199,15 @@ namespace webApi.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("VideoDemoUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CategoryId");
+
+                    b.HasIndex("InstructorId");
 
                     b.ToTable("courses");
                 });
@@ -410,6 +519,36 @@ namespace webApi.Migrations
                     b.ToTable("VideoProgresses");
                 });
 
+            modelBuilder.Entity("webApi.Model.CartModel.CartItem", b =>
+                {
+                    b.HasOne("webApi.Model.CartModel.Cart", "Cart")
+                        .WithMany("CartItems")
+                        .HasForeignKey("CartId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Cart");
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.Lesson", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.Section", "Section")
+                        .WithMany("Lessons")
+                        .HasForeignKey("SectionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Section");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.RelatedCourse", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.courses", "Course")
@@ -429,13 +568,30 @@ namespace webApi.Migrations
                     b.Navigation("Related");
                 });
 
+            modelBuilder.Entity("webApi.Model.CourseModel.Section", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany("Sections")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
                 {
                     b.HasOne("webApi.Model.CategoryModel.Categories", "Category")
                         .WithMany()
                         .HasForeignKey("CategoryId");
 
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "Instructor")
+                        .WithMany()
+                        .HasForeignKey("InstructorId");
+
                     b.Navigation("Category");
+
+                    b.Navigation("Instructor");
                 });
 
             modelBuilder.Entity("webApi.Model.Enrollment", b =>
@@ -550,6 +706,21 @@ namespace webApi.Migrations
                     b.Navigation("User");
 
                     b.Navigation("Video");
+                });
+
+            modelBuilder.Entity("webApi.Model.CartModel.Cart", b =>
+                {
+                    b.Navigation("CartItems");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.Section", b =>
+                {
+                    b.Navigation("Lessons");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
+                {
+                    b.Navigation("Sections");
                 });
 #pragma warning restore 612, 618
         }

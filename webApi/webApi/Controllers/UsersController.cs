@@ -262,7 +262,8 @@ namespace webApi.Controllers
 
                 return Ok(new {
                     firstName = user.FirstName,
-                    lastName = user.LastName
+                    lastName = user.LastName,
+                    imageUrl = user.ImageUrl
                 });
             }
             catch (Exception ex)
@@ -464,7 +465,8 @@ namespace webApi.Controllers
                 var updateData = new
                 {
                     first_name = updateDto.FirstName,
-                    last_name = updateDto.LastName
+                    last_name = updateDto.LastName,
+                    image_url = updateDto.ImageUrl
                 };
 
                 var content = new StringContent(
@@ -483,6 +485,7 @@ namespace webApi.Controllers
                 // Cập nhật thông tin trong database
                 user.FirstName = updateDto.FirstName;
                 user.LastName = updateDto.LastName;
+                user.ImageUrl = updateDto.ImageUrl;
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(user);
@@ -490,7 +493,109 @@ namespace webApi.Controllers
                 return Ok(new {
                     firstName = user.FirstName,
                     lastName = user.LastName,
+                    imageUrl = user.ImageUrl,
                     message = "Cập nhật thông tin thành công"
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet("instructor/{id}")]
+        public async Task<IActionResult> GetInstructorInfo(string id)
+        {
+            try
+            {
+                var user = await _userRepository.GetUserByIdAsync(id);
+                if (user == null)
+                {
+                    return NotFound("Không tìm thấy thông tin giảng viên");
+                }
+
+                var instructorInfo = new InstructorInfo
+                {
+                    Id = user.Id,
+                    Username = user.Username,
+                    ImageUrl = user.ImageUrl
+                };
+
+                return Ok(instructorInfo);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPost("{id}/sync")]
+        public async Task<IActionResult> SyncUserData(string id)
+        {
+            try
+            {
+                // Lấy thông tin từ Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+                
+                var response = await client.GetAsync($"users/{id}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không tìm thấy thông tin người dùng từ Clerk");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var userData = JsonSerializer.Deserialize<UserInfo>(content);
+
+                // Đảm bảo ID được gán
+                userData.Id = id;
+
+                // Lưu email từ email_addresses
+                if (userData.EmailAddresses != null && userData.EmailAddresses.Any())
+                {
+                    userData.Email = userData.EmailAddresses[0].Email;
+                }
+                else
+                {
+                    userData.Email = $"{id}@temp.com";
+                }
+
+                // Lấy role từ public_metadata
+                userData.Role = userData.PublicMetadata?.Role ?? "user";
+
+                // Đảm bảo các trường bắt buộc không null
+                userData.Username ??= id;
+                userData.FirstName ??= string.Empty;
+                userData.LastName ??= string.Empty;
+                userData.ImageUrl ??= string.Empty;
+                userData.ProfileImageUrl ??= string.Empty;
+
+                // Cập nhật vào database
+                await _userRepository.CreateOrUpdateUserAsync(userData);
+
+                // Nếu người dùng là instructor, trả về thêm thông tin instructor
+                if (userData.Role?.ToLower() == "instructor")
+                {
+                    var instructorInfo = new InstructorInfo
+                    {
+                        Id = userData.Id,
+                        Username = userData.Username,
+                        ImageUrl = userData.ImageUrl
+                    };
+
+                    return Ok(new { 
+                        message = "Đồng bộ thông tin người dùng thành công",
+                        user = userData,
+                        instructor = instructorInfo
+                    });
+                }
+
+                return Ok(new { 
+                    message = "Đồng bộ thông tin người dùng thành công",
+                    user = userData
                 });
             }
             catch (Exception ex)
@@ -533,5 +638,14 @@ namespace webApi.Controllers
 
         [Required(ErrorMessage = "Họ không được để trống")]
         public string LastName { get; set; }
+
+        public string ImageUrl { get; set; }
+    }
+
+    public class InstructorInfo
+    {
+        public string Id { get; set; }
+        public string Username { get; set; }
+        public string ImageUrl { get; set; }
     }
 } 

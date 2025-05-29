@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using webApi.Model.CourseModel;
 using webApi.Repositories;
 using Microsoft.EntityFrameworkCore;
@@ -55,6 +56,7 @@ namespace webApi.Controllers
                     Price = course.Price,
                     Description = course.Description,
                     ImageUrl = course.ImageUrl,
+                    VideoDemoUrl = course.VideoDemoUrl,
                     Status = (int)course.Status,
                     StatusText = course.StatusText,
                     Level = (int)course.Level,
@@ -81,7 +83,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
             }
         }
-        //Thêm khóa học
+        //Thêm khóa học - Chỉ Admin và Instructor
         [HttpPost]
         public async Task<IActionResult> Addcourses([FromBody] CourseCreateDto dto)
         {
@@ -134,9 +136,11 @@ namespace webApi.Controllers
                     Price = dto.Price,
                     Description = dto.Description,
                     ImageUrl = dto.ImageUrl,
+                    VideoDemoUrl = dto.VideoDemoUrl,
                     Status = (CourseStatus)dto.Status,
                     Level = (CourseLevel)dto.Level,
                     CategoryId = dto.CategoryId,
+                    InstructorId = dto.InstructorId,
                     Sections = dto.Sections?.Select(s => new Section
                     {
                         Title = s.Title,
@@ -160,6 +164,7 @@ namespace webApi.Controllers
                         Price = course.Price,
                         Description = course.Description,
                         ImageUrl = course.ImageUrl,
+                        VideoDemoUrl = course.VideoDemoUrl,
                         Status = (int)course.Status,
                         StatusText = course.StatusText,
                         Level = (int)course.Level,
@@ -191,7 +196,7 @@ namespace webApi.Controllers
                 return StatusCode(500, "Lỗi server: " + ex.Message);
             }
         }
-        //Cập nhật khóa học
+        //Cập nhật khóa học - Chỉ Admin và Instructor
         [HttpPut("{id}")]
         public async Task<IActionResult> Updatecourses(int id, [FromBody] courses courses)
         {
@@ -219,7 +224,7 @@ namespace webApi.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
-        //Xóa khóa học
+        //Xóa khóa học - Chỉ Admin
         [HttpDelete("{id}")]
         public async Task<IActionResult> Deletecourses(int id)
         {
@@ -322,6 +327,66 @@ namespace webApi.Controllers
         {
             var overview = await _coursesRepository.GetCourseOverviewAsync(id);
             return Ok(overview);
+        }
+
+        [HttpGet("{courseId}/next-video/{currentVideoId}")]
+        public async Task<IActionResult> GetNextVideo(int courseId, int currentVideoId)
+        {
+            try
+            {
+                // Lấy khóa học với tất cả sections và lessons
+                var course = await _context.courses
+                    .Include(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                    .FirstOrDefaultAsync(c => c.Id == courseId);
+
+                if (course == null)
+                    return NotFound("Không tìm thấy khóa học");
+
+                // Tìm lesson hiện tại
+                var currentLesson = course.Sections
+                    .SelectMany(s => s.Lessons)
+                    .FirstOrDefault(l => l.Id == currentVideoId);
+
+                if (currentLesson == null)
+                    return NotFound("Không tìm thấy video hiện tại");
+
+                // Tìm lesson tiếp theo
+                var nextLesson = FindNextLesson(course.Sections, currentVideoId);
+
+                if (nextLesson == null)
+                    return Ok(new { 
+                        message = "Đây là video cuối cùng của khóa học",
+                        isLastVideo = true
+                    });
+
+                return Ok(new {
+                    lessonId = nextLesson.Id,
+                    title = nextLesson.Title,
+                    content = nextLesson.Content,
+                    type = (int)nextLesson.Type,
+                    isLastVideo = false
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        private Lesson FindNextLesson(ICollection<Section> sections, int currentVideoId)
+        {
+            var allLessons = sections
+                .OrderBy(s => s.Id)
+                .SelectMany(s => s.Lessons.OrderBy(l => l.Id))
+                .ToList();
+
+            var currentIndex = allLessons.FindIndex(l => l.Id == currentVideoId);
+            
+            if (currentIndex == -1 || currentIndex == allLessons.Count - 1)
+                return null;
+
+            return allLessons[currentIndex + 1];
         }
     }
 }
