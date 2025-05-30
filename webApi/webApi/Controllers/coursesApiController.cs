@@ -76,7 +76,7 @@ namespace webApi.Controllers
                     Instructor = course.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
                     {
                         Id = course.Instructor.Id,
-                        Username = course.Instructor.Username,
+                        Username = course.Instructor.FirstName,
                         ImageUrl = course.Instructor.ImageUrl
                     } : null,
                     Sections = course.Sections?.Select(s => new SectionResponseDto
