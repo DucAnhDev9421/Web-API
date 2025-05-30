@@ -47,10 +47,17 @@ namespace webApi.Controllers
                 var course = await _context.courses
                     .Include(c => c.Sections)
                         .ThenInclude(s => s.Lessons)
+                    .Include(c => c.Instructor)
                     .FirstOrDefaultAsync(c => c.Id == id);
 
                 if (course == null)
                     return NotFound("Không tìm thấy khóa học");
+
+                // Tính tổng thời lượng video
+                var totalSeconds = course.Sections?
+                    .SelectMany(s => s.Lessons)
+                    .Where(l => l.Type == (int)LessonType.Video && !string.IsNullOrEmpty(l.Duration))
+                    .Sum(l => ParseDurationToSeconds(l.Duration)) ?? 0;
 
                 var response = new CourseResponseDto
                 {
@@ -65,6 +72,13 @@ namespace webApi.Controllers
                     Level = (int)course.Level,
                     LevelText = course.LevelText,
                     CategoryId = course.CategoryId,
+                    TotalDuration = FormatTotalDuration(totalSeconds),
+                    Instructor = course.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
+                    {
+                        Id = course.Instructor.Id,
+                        Username = course.Instructor.Username,
+                        ImageUrl = course.Instructor.ImageUrl
+                    } : null,
                     Sections = course.Sections?.Select(s => new SectionResponseDto
                     {
                         Id = s.Id,
@@ -85,6 +99,46 @@ namespace webApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        private int ParseDurationToSeconds(string duration)
+        {
+            if (string.IsNullOrEmpty(duration)) return 0;
+
+            var parts = duration.Split(':');
+            if (parts.Length == 2) // MM:SS format
+            {
+                if (int.TryParse(parts[0], out int minutes) && int.TryParse(parts[1], out int seconds))
+                {
+                    return minutes * 60 + seconds;
+                }
+            }
+            else if (parts.Length == 3) // HH:MM:SS format
+            {
+                if (int.TryParse(parts[0], out int hours) && 
+                    int.TryParse(parts[1], out int minutes) && 
+                    int.TryParse(parts[2], out int seconds))
+                {
+                    return hours * 3600 + minutes * 60 + seconds;
+                }
+            }
+            return 0;
+        }
+
+        private string FormatTotalDuration(int totalSeconds)
+        {
+            var hours = totalSeconds / 3600;
+            var minutes = (totalSeconds % 3600) / 60;
+            var seconds = totalSeconds % 60;
+
+            if (hours > 0)
+            {
+                return $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+            }
+            else
+            {
+                return $"{minutes:D2}:{seconds:D2}";
             }
         }
         //Thêm khóa học - Chỉ Admin và Instructor
