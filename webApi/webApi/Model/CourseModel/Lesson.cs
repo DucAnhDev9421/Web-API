@@ -26,5 +26,6 @@ namespace webApi.Model.CourseModel
         public Section Section { get; set; }
 
         public string Content { get; set; }
+        public string Duration { get; set; }
     }
 } 

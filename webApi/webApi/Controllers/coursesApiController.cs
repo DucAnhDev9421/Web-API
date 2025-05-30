@@ -5,6 +5,7 @@ using webApi.Model.CourseModel;
 using webApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 using webApi.Model;
+using webApi.Services;
 
 namespace webApi.Controllers
 {
@@ -15,10 +16,12 @@ namespace webApi.Controllers
 
         private readonly IcoursesRepository _coursesRepository;
         private readonly ApplicationDbContext _context;
-        public coursesApiController(IcoursesRepository coursesRepository, ApplicationDbContext context)
+        private readonly IYouTubeService _youtubeService;
+        public coursesApiController(IcoursesRepository coursesRepository, ApplicationDbContext context, IYouTubeService youtubeService)
         {
             _coursesRepository = coursesRepository;
             _context = context;
+            _youtubeService = youtubeService;
         }
         //Lây danh sách tất cả các khóa học
         [HttpGet]
@@ -71,7 +74,8 @@ namespace webApi.Controllers
                             Id = l.Id,
                             Title = l.Title,
                             Type = (int)l.Type,
-                            Content = l.Content
+                            Content = l.Content,
+                            Duration = l.Duration
                         }).ToList()
                     }).ToList()
                 };
@@ -144,12 +148,31 @@ namespace webApi.Controllers
                     Sections = dto.Sections?.Select(s => new Section
                     {
                         Title = s.Title,
-                        Lessons = s.Lessons?.Select(l => new Lesson
+                        Lessons = s.Lessons?.Select(async l => 
                         {
-                            Title = l.Title,
-                            Type = (LessonType)l.Type,
-                            Content = l.Content
-                        }).ToList()
+                            var lesson = new Lesson
+                            {
+                                Title = l.Title,
+                                Type = (LessonType)l.Type,
+                                Content = l.Content
+                            };
+
+                            // Nếu là video YouTube, lấy thời lượng
+                            if (l.Type == (int)LessonType.Video && !string.IsNullOrEmpty(l.Content))
+                            {
+                                try
+                                {
+                                    lesson.Duration = await _youtubeService.GetVideoDurationAsync(l.Content);
+                                }
+                                catch (Exception ex)
+                                {
+                                    // Log error but continue
+                                    Console.WriteLine($"Error getting video duration: {ex.Message}");
+                                }
+                            }
+
+                            return lesson;
+                        }).Select(t => t.Result).ToList()
                     }).ToList()
                 };
 

@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
 using webApi.Repositories;
+using webApi.Services;
 
 namespace webApi.Controllers
 {
@@ -10,10 +11,12 @@ namespace webApi.Controllers
     public class VideoApiController : ControllerBase
     {
         private readonly IVideoRepository _videoRepository;
+        private readonly IYouTubeService _youtubeService;
 
-        public VideoApiController(IVideoRepository videoRepository)
+        public VideoApiController(IVideoRepository videoRepository, IYouTubeService youtubeService)
         {
             _videoRepository = videoRepository;
+            _youtubeService = youtubeService;
         }
 
         [HttpPost("increment-view/{id}")]
@@ -82,6 +85,20 @@ namespace webApi.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, new { message = "Error tracking video progress", error = ex.Message });
+            }
+        }
+
+        [HttpGet("video-duration")]
+        public async Task<IActionResult> GetVideoDuration([FromQuery] string videoUrl)
+        {
+            try
+            {
+                var duration = await _youtubeService.GetVideoDurationAsync(videoUrl);
+                return Ok(new { duration });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { error = ex.Message });
             }
         }
     }

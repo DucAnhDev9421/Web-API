@@ -8,6 +8,7 @@ namespace webApi.Model.CourseModel
         public string Title { get; set; }
         public int Type { get; set; }
         public string Content { get; set; }
+        public string Duration { get; set; }
     }
 
     public class SectionResponseDto

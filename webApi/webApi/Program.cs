@@ -7,6 +7,7 @@ using webApi.Model;
 using webApi.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
+using webApi.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -91,6 +92,7 @@ builder.Services.AddScoped<IUserCourseProgressRepository, UserCourseProgressRepo
 builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IYouTubeService, YouTubeApiService>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
