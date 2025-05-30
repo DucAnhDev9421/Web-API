@@ -378,7 +378,35 @@ namespace webApi.Controllers
         {
             try
             {
-                var relatedCourses = await _coursesRepository.GetRelatedCoursesAsync(id);
+                var relatedCourses = await _context.courses
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Category)
+                    .Where(c => _context.RelatedCourses
+                        .Where(rc => rc.CourseId == id)
+                        .Select(rc => rc.RelatedCourseId)
+                        .Contains(c.Id))
+                    .Select(c => new CourseWithCategoryDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Price = c.Price,
+                        Description = c.Description,
+                        ImageUrl = c.ImageUrl,
+                        Status = c.Status,
+                        StatusText = c.StatusText,
+                        Level = c.Level,
+                        LevelText = c.LevelText,
+                        CategoryId = c.CategoryId,
+                        CategoryName = c.Category != null ? c.Category.Name : null,
+                        Instructor = c.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
+                        {
+                            Id = c.Instructor.Id,
+                            Username = c.Instructor.FirstName,
+                            ImageUrl = c.Instructor.ImageUrl
+                        } : null
+                    })
+                    .ToListAsync();
+
                 return Ok(relatedCourses);
             }
             catch (Exception ex)
