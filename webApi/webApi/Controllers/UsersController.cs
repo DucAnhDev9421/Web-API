@@ -39,14 +39,7 @@ namespace webApi.Controllers
         {
             try
             {
-                // Kiểm tra trong database trước
-                var userFromDb = await _userRepository.GetUserByIdAsync(id);
-                if (userFromDb != null)
-                {
-                    return Ok(userFromDb);
-                }
-
-                // Nếu không có trong database, lấy từ Clerk
+                // Lấy thông tin từ Clerk
                 var client = _httpClientFactory.CreateClient("Clerk");
                 var secretKey = _configuration["Clerk:SecretKey"];
                 
@@ -76,8 +69,8 @@ namespace webApi.Controllers
                     userData.Email = $"{id}@temp.com";
                 }
 
-                // Lấy role từ public_metadata
-                userData.Role = userData.PublicMetadata?.Role ?? "user";
+                // Lấy role từ private_metadata
+                userData.Role = userData.PrivateMetadata?.Role ?? "user";
 
                 // Đảm bảo các trường bắt buộc không null
                 userData.Username ??= id;
@@ -135,11 +128,7 @@ namespace webApi.Controllers
                     first_name = updateDto.FirstName,
                     last_name = updateDto.LastName,
                     image_url = updateDto.ImageUrl,
-                    profile_image_url = updateDto.ProfileImageUrl,
-                    public_metadata = new
-                    {
-                        role = updateDto.Role
-                    }
+                    profile_image_url = updateDto.ProfileImageUrl
                 };
 
                 var content = new StringContent(
@@ -161,7 +150,6 @@ namespace webApi.Controllers
                 userFromDb.LastName = updateDto.LastName;
                 userFromDb.ImageUrl = updateDto.ImageUrl;
                 userFromDb.ProfileImageUrl = updateDto.ProfileImageUrl;
-                userFromDb.Role = updateDto.Role;
                 userFromDb.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(userFromDb);
@@ -570,8 +558,8 @@ namespace webApi.Controllers
                     userData.Email = $"{id}@temp.com";
                 }
 
-                // Lấy role từ public_metadata
-                userData.Role = userData.PublicMetadata?.Role ?? "user";
+                // Lấy role từ private_metadata
+                userData.Role = userData.PrivateMetadata?.Role ?? "user";
 
                 // Đảm bảo các trường bắt buộc không null
                 userData.Username ??= id;
@@ -603,6 +591,68 @@ namespace webApi.Controllers
                 return Ok(new { 
                     message = "Đồng bộ thông tin người dùng thành công",
                     user = userData
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPut("{id}/role")]
+        public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Kiểm tra trong database
+                var userFromDb = await _userRepository.GetUserByIdAsync(id);
+                if (userFromDb == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Cập nhật role trong Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+
+                // Tạo request body cho Clerk API
+                var updateData = new
+                {
+                    private_metadata = new
+                    {
+                        role = updateRoleDto.Role
+                    }
+                };
+
+                var content = new StringContent(
+                    JsonSerializer.Serialize(updateData),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await client.PatchAsync($"users/{id}", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không thể cập nhật role người dùng trên Clerk");
+                }
+
+                // Cập nhật role trong database
+                userFromDb.Role = updateRoleDto.Role;
+                userFromDb.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.CreateOrUpdateUserAsync(userFromDb);
+
+                return Ok(new { 
+                    message = "Cập nhật role thành công",
+                    role = userFromDb.Role
                 });
             }
             catch (Exception ex)
@@ -655,5 +705,11 @@ namespace webApi.Controllers
         public string Id { get; set; }
         public string Username { get; set; }
         public string ImageUrl { get; set; }
+    }
+
+    public class UpdateRoleDto
+    {
+        [Required(ErrorMessage = "Role không được để trống")]
+        public string Role { get; set; }
     }
 } 

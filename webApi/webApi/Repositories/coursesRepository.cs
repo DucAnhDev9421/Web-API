@@ -35,7 +35,7 @@ namespace webApi.Repositories
                     Instructor = c.Instructor != null ? new InstructorInfo
                     {
                         Id = c.Instructor.Id,
-                        Username = c.Instructor.Username,
+                        Username = c.Instructor.FirstName,
                         ImageUrl = c.Instructor.ImageUrl
                     } : null
                 })
@@ -68,7 +68,7 @@ namespace webApi.Repositories
                 Instructor = course.Instructor != null ? new InstructorInfo
                 {
                     Id = course.Instructor.Id,
-                    Username = course.Instructor.Username,
+                    Username = course.Instructor.FirstName,
                     ImageUrl = course.Instructor.ImageUrl
                 } : null
             };

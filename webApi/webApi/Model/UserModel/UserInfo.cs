@@ -49,6 +49,10 @@ namespace webApi.Model.UserModel
         [NotMapped]
         public PublicMetadata PublicMetadata { get; set; }
 
+        [JsonPropertyName("private_metadata")]
+        [NotMapped]
+        public PrivateMetadata PrivateMetadata { get; set; }
+
         [StringLength(100)]
         public string JobTitle { get; set; }
 
@@ -66,6 +70,12 @@ namespace webApi.Model.UserModel
     }
 
     public class PublicMetadata
+    {
+        [JsonPropertyName("role")]
+        public string Role { get; set; }
+    }
+
+    public class PrivateMetadata
     {
         [JsonPropertyName("role")]
         public string Role { get; set; }
