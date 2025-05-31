@@ -15,6 +15,7 @@ namespace webApi.Model
         public string UserId { get; set; }
 
         [Required]
+        [Column("CourseId")]
         public int CourseId { get; set; }
 
         public DateTime EnrolledAt { get; set; } = DateTime.UtcNow;

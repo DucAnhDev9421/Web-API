@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using webApi.Model.CourseModel;
 
 namespace webApi.Model.UserModel
 {
@@ -61,6 +62,10 @@ namespace webApi.Model.UserModel
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<Enrollment> Enrollments { get; set; }
+        public virtual ICollection<courses> Courses { get; set; }
     }
 
     public class EmailAddress

@@ -7,6 +7,10 @@ using webApi.Model.UserModel;
 using webApi.Repositories;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace webApi.Controllers
 {
@@ -19,19 +23,22 @@ namespace webApi.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IUserCourseProgressRepository _userCourseProgressRepository;
         private readonly INoteRepository _noteRepository;
+        private readonly ApplicationDbContext _context;
 
         public UsersController(
             IHttpClientFactory httpClientFactory, 
             IConfiguration configuration,
             IUserRepository userRepository,
             IUserCourseProgressRepository userCourseProgressRepository,
-            INoteRepository noteRepository)
+            INoteRepository noteRepository,
+            ApplicationDbContext context)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _userRepository = userRepository;
             _userCourseProgressRepository = userCourseProgressRepository;
             _noteRepository = noteRepository;
+            _context = context;
         }
 
         [HttpGet("{id}")]
@@ -654,6 +661,68 @@ namespace webApi.Controllers
                     message = "Cập nhật role thành công",
                     role = userFromDb.Role
                 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var users = await _context.Users
+                    .Include(u => u.Enrollments)
+                    .Include(u => u.Courses)
+                        .ThenInclude(c => c.Ratings)
+                    .ToListAsync();
+
+                var userList = new List<object>();
+
+                foreach (var user in users)
+                {
+                    if (user.Role?.ToLower() == "instructor")
+                    {
+                        // Thông tin cho giảng viên
+                        var instructorInfo = new
+                        {
+                            id = user.Id,
+                            firstName = user.FirstName,
+                            lastName = user.LastName,
+                            imageUrl = user.ImageUrl,
+                            role = user.Role,
+                            joinedAt = user.CreatedAt,
+                            courses = new
+                            {
+                                total = user.Courses?.Count ?? 0,
+                                students = user.Courses?.Sum(c => c.Enrollments?.Count ?? 0) ?? 0,
+                                rating = user.Courses?.Any() == true 
+                                    ? Math.Round(user.Courses.Average(c => c.Ratings?.Average(r => r.RatingValue) ?? 0), 1)
+                                    : 0
+                            }
+                        };
+                        userList.Add(instructorInfo);
+                    }
+                    else
+                    {
+                        // Thông tin cho người dùng thông thường
+                        var userInfo = new
+                        {
+                            id = user.Id,
+                            firstName = user.FirstName,
+                            lastName = user.LastName,
+                            imageUrl = user.ImageUrl,
+                            role = user.Role ?? "user",
+                            joinedAt = user.CreatedAt,
+                            enrolledCourses = user.Enrollments?.Count ?? 0
+                        };
+                        userList.Add(userInfo);
+                    }
+                }
+
+                return Ok(userList);
             }
             catch (Exception ex)
             {

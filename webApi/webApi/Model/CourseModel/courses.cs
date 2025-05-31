@@ -66,7 +66,11 @@ namespace webApi.Model.CourseModel
         public UserInfo? Instructor { get; set; }
 
         public ICollection<Section> Sections { get; set; }
+
+        // Add Ratings navigation property
+        public ICollection<Rating> Ratings { get; set; }
+
+        // Navigation properties
+        public ICollection<Enrollment> Enrollments { get; set; }
     }
-
-
 }
