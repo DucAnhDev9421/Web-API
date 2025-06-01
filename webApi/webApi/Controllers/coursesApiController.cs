@@ -141,6 +141,45 @@ namespace webApi.Controllers
                 return $"{minutes:D2}:{seconds:D2}";
             }
         }
+        //Lấy danh sách khóa học theo ID giảng viên
+        [HttpGet("instructor/{instructorId}")]
+        public async Task<IActionResult> GetCoursesByInstructor(string instructorId)
+        {
+            try
+            {
+                var courses = await _context.courses
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Category)
+                    .Where(c => c.InstructorId == instructorId)
+                    .Select(c => new CourseWithCategoryDto
+                    {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Price = c.Price,
+                        Description = c.Description,
+                        ImageUrl = c.ImageUrl,
+                        Status = c.Status,
+                        StatusText = c.StatusText,
+                        Level = c.Level,
+                        LevelText = c.LevelText,
+                        CategoryId = c.CategoryId,
+                        CategoryName = c.Category != null ? c.Category.Name : null,
+                        Instructor = c.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
+                        {
+                            Id = c.Instructor.Id,
+                            Username = c.Instructor.FirstName,
+                            ImageUrl = c.Instructor.ImageUrl
+                        } : null
+                    })
+                    .ToListAsync();
+
+                return Ok(courses);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
         //Thêm khóa học - Chỉ Admin và Instructor
         [HttpPost]
         public async Task<IActionResult> Addcourses([FromBody] CourseCreateDto dto)

@@ -667,6 +667,54 @@ namespace webApi.Controllers
             }
         }
 
+        [HttpPost("{id}/sync-role")]
+        public async Task<IActionResult> SyncUserRole(string id)
+        {
+            try
+            {
+                // Lấy thông tin từ Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+                
+                var response = await client.GetAsync($"users/{id}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không tìm thấy thông tin người dùng từ Clerk");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var userData = JsonSerializer.Deserialize<UserInfo>(content);
+
+                // Lấy role từ public_metadata
+                var role = userData.PublicMetadata?.Role ?? "user";
+
+                // Kiểm tra trong database
+                var userFromDb = await _userRepository.GetUserByIdAsync(id);
+                if (userFromDb == null)
+                {
+                    return NotFound("Không tìm thấy người dùng trong database");
+                }
+
+                // Cập nhật role trong database
+                userFromDb.Role = role;
+                userFromDb.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.CreateOrUpdateUserAsync(userFromDb);
+
+                return Ok(new { 
+                    message = "Đồng bộ role thành công",
+                    role = role
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
         [HttpGet]
         public async Task<IActionResult> GetUsers()
         {
