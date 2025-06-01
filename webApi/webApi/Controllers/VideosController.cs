@@ -10,12 +10,10 @@ namespace webApi.Controllers
     public class VideosController : ControllerBase
     {
         private readonly IVideoRepository _videoRepository;
-        private readonly INoteRepository _noteRepository;
 
-        public VideosController(IVideoRepository videoRepository, INoteRepository noteRepository)
+        public VideosController(IVideoRepository videoRepository)
         {
             _videoRepository = videoRepository;
-            _noteRepository = noteRepository;
         }
 
         [HttpGet("{id}")]
@@ -38,6 +36,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPost]
         public async Task<IActionResult> CreateVideo([FromBody] Video video)
         {
@@ -92,6 +91,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPatch("{id}/order")]
         public async Task<IActionResult> UpdateVideoOrder(int id, [FromBody] int order)
         {
@@ -111,6 +111,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteVideo(int id)
         {
@@ -130,25 +131,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
-        [HttpGet("{id}/notes")]
-        public async Task<IActionResult> GetVideoNotes(int id)
-        {
-            try
-            {
-                var video = await _videoRepository.GetVideoByIdAsync(id);
-                if (video == null)
-                {
-                    return NotFound("Video not found");
-                }
 
-                var notes = await _noteRepository.GetNotesByVideoIdAsync(id);
-                return Ok(notes);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Internal server error: {ex.Message}");
-            }
-        }
         [HttpPatch("{id}/visibility")]
         public async Task<IActionResult> UpdateVideoVisibility(int id, [FromBody] VideoVisibilityDto dto)
         {
@@ -174,6 +157,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPatch("{id}/metadata")]  // New PATCH endpoint
         public async Task<IActionResult> UpdateVideoMetadata(int id, [FromBody] VideoMetadataDto metadata)
         {
@@ -193,6 +177,7 @@ namespace webApi.Controllers
                 return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
+
         [HttpPost("upload-url")]
         public IActionResult GetUploadUrl()
         {
@@ -200,6 +185,7 @@ namespace webApi.Controllers
             var tempUploadUrl = "https://youtube.com/upload?token=some-temp-token";
             return Ok(new { uploadUrl = tempUploadUrl, expiresIn = 600 }); // expiresIn: giây
         }
+
         [HttpGet("popular")]
         public async Task<IActionResult> GetPopularVideos([FromQuery] int top = 10)
         {
