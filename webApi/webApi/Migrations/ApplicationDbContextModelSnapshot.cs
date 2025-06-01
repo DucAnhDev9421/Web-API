@@ -256,6 +256,9 @@ namespace webApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -267,14 +270,11 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("VideoId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("LessonId");
 
-                    b.HasIndex("VideoId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notes");
                 });
@@ -633,21 +633,21 @@ namespace webApi.Migrations
 
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
+                    b.HasOne("webApi.Model.CourseModel.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("webApi.Model.UserModel.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.Video", "Video")
-                        .WithMany()
-                        .HasForeignKey("VideoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Lesson");
 
                     b.Navigation("User");
-
-                    b.Navigation("Video");
                 });
 
             modelBuilder.Entity("webApi.Model.Rating", b =>

@@ -370,7 +370,6 @@ namespace webApi.Controllers
                 {
                     Title = createNoteDto.Title,
                     Content = createNoteDto.Content,
-                    VideoId = createNoteDto.VideoId,
                     UserId = id,
                     CreatedAt = DateTime.UtcNow
                 };
