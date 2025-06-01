@@ -12,8 +12,8 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250601075255_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20250601110410_NewData")]
+    partial class NewData
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -105,6 +105,10 @@ namespace webApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Duration")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -221,7 +225,8 @@ namespace webApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("CourseId");
 
                     b.Property<DateTime>("EnrolledAt")
                         .HasColumnType("datetime2");
@@ -290,7 +295,8 @@ namespace webApi.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("CourseId");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -305,11 +311,16 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("coursesId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("coursesId");
 
                     b.ToTable("Ratings");
                 });
@@ -389,6 +400,11 @@ namespace webApi.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasAnnotation("Relational:JsonPropertyName", "id");
 
+                    b.Property<string>("Bio")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -409,6 +425,11 @@ namespace webApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "image_url");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -586,7 +607,7 @@ namespace webApi.Migrations
                         .HasForeignKey("CategoryId");
 
                     b.HasOne("webApi.Model.UserModel.UserInfo", "Instructor")
-                        .WithMany()
+                        .WithMany("Courses")
                         .HasForeignKey("InstructorId");
 
                     b.Navigation("Category");
@@ -597,13 +618,13 @@ namespace webApi.Migrations
             modelBuilder.Entity("webApi.Model.Enrollment", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("webApi.Model.UserModel.UserInfo", "User")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -645,6 +666,10 @@ namespace webApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("webApi.Model.CourseModel.courses", null)
+                        .WithMany("Ratings")
+                        .HasForeignKey("coursesId");
 
                     b.Navigation("Course");
 
@@ -720,7 +745,18 @@ namespace webApi.Migrations
 
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
                 {
+                    b.Navigation("Enrollments");
+
+                    b.Navigation("Ratings");
+
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("webApi.Model.UserModel.UserInfo", b =>
+                {
+                    b.Navigation("Courses");
+
+                    b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618
         }
