@@ -6,6 +6,10 @@ using webApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 using webApi.Model;
 using webApi.Services;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace webApi.Controllers
 {
@@ -25,17 +29,139 @@ namespace webApi.Controllers
         }
         //Lây danh sách tất cả các khóa học
         [HttpGet]
-        public async Task<IActionResult> Getcourses()
+        public async Task<IActionResult> Getcourses(
+            [FromQuery] int? categoryId = null,
+            [FromQuery] int? level = null,
+            [FromQuery] bool? isFree = null, // true for free courses, false for paid courses
+            [FromQuery] int durationRange = 0, // 0: tất cả, 1: <2h, 2: 2-10h, 3: 10-20h, 4: >20h
+            [FromQuery] string sortBy = "name", // name, price, rating, duration
+            [FromQuery] string sortOrder = "asc", // asc or desc
+            [FromQuery] int page = 1,
+            [FromQuery] int pageSize = 10)
         {
             try
             {
-                var courses = await _coursesRepository.GetcoursesAsync();
-                return Ok(courses);
+                // Build query
+                var query = _context.courses
+                    .Include(c => c.Category)
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                    .Include(c => c.Ratings)
+                    .AsQueryable();
+
+                // Apply filters
+                if (categoryId.HasValue)
+                {
+                    query = query.Where(c => c.CategoryId == categoryId);
+                }
+
+                if (level.HasValue)
+                {
+                    query = query.Where(c => (int)c.Level == level);
+                }
+
+                if (isFree.HasValue)
+                {
+                    query = query.Where(c => isFree.Value ? c.Price == 0 : c.Price > 0);
+                }
+
+                // Get courses with their related data
+                var courses = await query.ToListAsync();
+
+                // Calculate total duration and average rating for each course
+                var coursesWithDetails = courses.Select(c => new
+                {
+                    Course = c,
+                    TotalDurationSeconds = c.Sections
+                        .SelectMany(s => s.Lessons)
+                        .Where(l => l.Type == LessonType.Video && !string.IsNullOrEmpty(l.Duration))
+                        .Sum(l => ParseDurationToSeconds(l.Duration)),
+                    AverageRating = c.Ratings.Any() ? c.Ratings.Average(r => r.RatingValue) : 0
+                }).ToList();
+
+                // Lọc theo thời lượng
+                switch (durationRange)
+                {
+                    case 1: // Dưới 2 giờ
+                        coursesWithDetails = coursesWithDetails
+                            .Where(x => x.TotalDurationSeconds < 2 * 3600).ToList();
+                        break;
+                    case 2: // 2 - 10 giờ
+                        coursesWithDetails = coursesWithDetails
+                            .Where(x => x.TotalDurationSeconds >= 2 * 3600 && x.TotalDurationSeconds < 10 * 3600).ToList();
+                        break;
+                    case 3: // 10 - 20 giờ
+                        coursesWithDetails = coursesWithDetails
+                            .Where(x => x.TotalDurationSeconds >= 10 * 3600 && x.TotalDurationSeconds < 20 * 3600).ToList();
+                        break;
+                    case 4: // Trên 20 giờ
+                        coursesWithDetails = coursesWithDetails
+                            .Where(x => x.TotalDurationSeconds >= 20 * 3600).ToList();
+                        break;
+                    // 0: tất cả, không lọc
+                }
+
+                // Apply sorting
+                var sortedCourses = sortBy.ToLower() switch
+                {
+                    "price" => sortOrder.ToLower() == "desc" 
+                        ? coursesWithDetails.OrderByDescending(x => x.Course.Price)
+                        : coursesWithDetails.OrderBy(x => x.Course.Price),
+                    "rating" => sortOrder.ToLower() == "desc"
+                        ? coursesWithDetails.OrderByDescending(x => x.AverageRating)
+                        : coursesWithDetails.OrderBy(x => x.AverageRating),
+                    "duration" => sortOrder.ToLower() == "desc"
+                        ? coursesWithDetails.OrderByDescending(x => x.TotalDurationSeconds)
+                        : coursesWithDetails.OrderBy(x => x.TotalDurationSeconds),
+                    _ => sortOrder.ToLower() == "desc"
+                        ? coursesWithDetails.OrderByDescending(x => x.Course.Name)
+                        : coursesWithDetails.OrderBy(x => x.Course.Name)
+                };
+
+                // Apply pagination
+                var totalItems = sortedCourses.Count();
+                var totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+                var pagedCourses = sortedCourses
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => new CourseWithDetailsDto
+                    {
+                        Id = x.Course.Id,
+                        Name = x.Course.Name,
+                        Price = x.Course.Price,
+                        Description = x.Course.Description,
+                        ImageUrl = x.Course.ImageUrl,
+                        VideoDemoUrl = x.Course.VideoDemoUrl,
+                        Status = x.Course.Status,
+                        StatusText = x.Course.StatusText,
+                        Level = x.Course.Level,
+                        LevelText = x.Course.LevelText,
+                        CategoryId = x.Course.CategoryId,
+                        CategoryName = x.Course.Category?.Name,
+                        Instructor = x.Course.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
+                        {
+                            Id = x.Course.Instructor.Id,
+                            Username = x.Course.Instructor.FirstName,
+                            ImageUrl = x.Course.Instructor.ImageUrl
+                        } : null,
+                        TotalDuration = FormatTotalDuration(x.TotalDurationSeconds),
+                        AverageRating = Math.Round(x.AverageRating, 1),
+                        TotalRatings = x.Course.Ratings.Count
+                    });
+
+                return Ok(new
+                {
+                    TotalItems = totalItems,
+                    TotalPages = totalPages,
+                    CurrentPage = page,
+                    PageSize = pageSize,
+                    Courses = pagedCourses
+                });
             }
             catch (Exception ex)
             {
-                // Handle exception 
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
         //Lấy khóa học theo id
@@ -275,30 +401,62 @@ namespace webApi.Controllers
         }
         //Cập nhật khóa học - Chỉ Admin và Instructor
         [HttpPut("{id}")]
-        public async Task<IActionResult> Updatecourses(int id, [FromBody] courses courses)
+        public async Task<IActionResult> UpdateCourse(int id, [FromBody] CourseUpdateDto updateDto)
         {
             try
             {
-                if (id != courses.Id)
-                    return BadRequest();
+                var course = await _context.courses
+                    .Include(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                    .FirstOrDefaultAsync(c => c.Id == id);
 
-                // Kiểm tra CategoryId nếu được cung cấp
-                if (courses.CategoryId.HasValue)
+                if (course == null)
                 {
-                    var categoryExists = await _context.Categories.AnyAsync(c => c.Id == courses.CategoryId.Value);
-                    if (!categoryExists)
+                    return NotFound("Course not found");
+                }
+
+                // Update basic course information
+                course.Name = updateDto.Name;
+                course.Price = updateDto.Price;
+                course.Description = updateDto.Description;
+                course.ImageUrl = updateDto.ImageUrl;
+                course.VideoDemoUrl = updateDto.VideoDemoUrl;
+                course.Status = (CourseStatus)updateDto.Status;
+                course.Level = (CourseLevel)updateDto.Level;
+                course.CategoryId = updateDto.CategoryId;
+                course.InstructorId = updateDto.InstructorId;
+
+                // Update sections and lessons
+                if (updateDto.Sections != null)
+                {
+                    // Remove existing sections and lessons
+                    _context.Sections.RemoveRange(course.Sections);
+
+                    // Add new sections and lessons
+                    foreach (var sectionDto in updateDto.Sections)
                     {
-                        return BadRequest("Category not found");
+                        var section = new Section
+                        {
+                            Title = sectionDto.Title,
+                            CourseId = id,
+                            Lessons = sectionDto.Lessons?.Select(l => new Lesson
+                            {
+                                Title = l.Title,
+                                Type = (LessonType)l.Type,
+                                Content = l.Content,
+                                Duration = l.Duration
+                            }).ToList()
+                        };
+                        course.Sections.Add(section);
                     }
                 }
 
-                await _coursesRepository.UpdatecoursesAsync(courses);
-                return NoContent();
+                await _context.SaveChangesAsync();
+                return Ok(new { message = "Course updated successfully" });
             }
             catch (Exception ex)
             {
-                // Handle exception 
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, $"Internal server error: {ex.Message}");
             }
         }
         //Xóa khóa học - Chỉ Admin

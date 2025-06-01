@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace webApi.Migrations
 {
     /// <inheritdoc />
-    public partial class InitialCreate : Migration
+    public partial class NewData : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -52,6 +52,8 @@ namespace webApi.Migrations
                     ImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     ProfileImageUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Role = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    JobTitle = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Bio = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
                     UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
                 },
@@ -206,7 +208,8 @@ namespace webApi.Migrations
                     RatingValue = table.Column<int>(type: "int", nullable: false),
                     Comment = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true)
+                    UpdatedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    coursesId = table.Column<int>(type: "int", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -223,6 +226,11 @@ namespace webApi.Migrations
                         principalTable: "courses",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Ratings_courses_coursesId",
+                        column: x => x.coursesId,
+                        principalTable: "courses",
+                        principalColumn: "Id");
                 });
 
             migrationBuilder.CreateTable(
@@ -336,7 +344,8 @@ namespace webApi.Migrations
                     Title = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     Type = table.Column<int>(type: "int", nullable: false),
                     SectionId = table.Column<int>(type: "int", nullable: false),
-                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    Content = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Duration = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -428,6 +437,11 @@ namespace webApi.Migrations
                 name: "IX_Ratings_CourseId",
                 table: "Ratings",
                 column: "CourseId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Ratings_coursesId",
+                table: "Ratings",
+                column: "coursesId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Ratings_UserId",
