@@ -6,6 +6,10 @@ using webApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 using webApi.Model;
 using webApi.Services;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
+using SixLabors.ImageSharp.Formats.Jpeg;
+using System.IO;
 
 namespace webApi.Controllers
 {
@@ -13,16 +17,25 @@ namespace webApi.Controllers
     [ApiController]
     public class coursesApiController : ControllerBase
     {
-
         private readonly IcoursesRepository _coursesRepository;
         private readonly ApplicationDbContext _context;
         private readonly IYouTubeService _youtubeService;
-        public coursesApiController(IcoursesRepository coursesRepository, ApplicationDbContext context, IYouTubeService youtubeService)
+        private readonly IWebHostEnvironment _environment;
+        private const int MaxFileSizeInBytes = 1024 * 1024; // 1MB
+        private const string ThumbnailFolder = "uploads/course-thumbnails";
+
+        public coursesApiController(
+            IcoursesRepository coursesRepository, 
+            ApplicationDbContext context, 
+            IYouTubeService youtubeService,
+            IWebHostEnvironment environment)
         {
             _coursesRepository = coursesRepository;
             _context = context;
             _youtubeService = youtubeService;
+            _environment = environment;
         }
+
         //Lây danh sách tất cả các khóa học
         [HttpGet]
         public async Task<IActionResult> Getcourses()
@@ -65,7 +78,7 @@ namespace webApi.Controllers
                     Name = course.Name,
                     Price = course.Price,
                     Description = course.Description,
-                    ImageUrl = course.ImageUrl,
+                    Thumbnail = course.Thumbnail,
                     VideoDemoUrl = course.VideoDemoUrl,
                     Status = (int)course.Status,
                     StatusText = course.StatusText,
@@ -157,7 +170,7 @@ namespace webApi.Controllers
                         Name = c.Name,
                         Price = c.Price,
                         Description = c.Description,
-                        ImageUrl = c.ImageUrl,
+                        Thumbnail = c.Thumbnail,
                         Status = c.Status,
                         StatusText = c.StatusText,
                         Level = c.Level,
@@ -182,7 +195,7 @@ namespace webApi.Controllers
         }
         //Thêm khóa học - Chỉ Admin và Instructor
         [HttpPost]
-        public async Task<IActionResult> Addcourses([FromBody] CourseCreateDto dto)
+        public async Task<IActionResult> Addcourses([FromForm] CourseCreateDto dto)
         {
             try
             {
@@ -199,15 +212,9 @@ namespace webApi.Controllers
                 if (string.IsNullOrWhiteSpace(dto.Description))
                     return BadRequest("Mô tả khóa học không được để trống");
 
-                if (string.IsNullOrWhiteSpace(dto.ImageUrl))
-                    return BadRequest("URL hình ảnh không được để trống");
-
-                // Kiểm tra độ dài mô tả và URL hình ảnh
+                // Kiểm tra độ dài mô tả
                 if (dto.Description.Length > 500)
                     return BadRequest("Mô tả khóa học không được vượt quá 500 ký tự");
-
-                if (dto.ImageUrl.Length > 500)
-                    return BadRequest("URL hình ảnh không được vượt quá 500 ký tự");
 
                 // Kiểm tra CategoryId nếu được cung cấp
                 if (dto.CategoryId.HasValue)
@@ -226,13 +233,58 @@ namespace webApi.Controllers
                 if (!Enum.IsDefined(typeof(CourseLevel), dto.Level))
                     return BadRequest("Cấp độ khóa học không hợp lệ");
 
+                string thumbnailPath = "/thumbnails/default.jpg";
+
+                // Xử lý tải ảnh thumbnail
+                if (dto.Thumbnail != null)
+                {
+                    if (dto.Thumbnail.Length > MaxFileSizeInBytes)
+                        return BadRequest("Kích thước file không được vượt quá 1MB");
+
+                    // Kiểm tra định dạng file
+                    var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                    var fileExtension = Path.GetExtension(dto.Thumbnail.FileName).ToLowerInvariant();
+                    if (!allowedExtensions.Contains(fileExtension))
+                        return BadRequest("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
+
+                    // Tạo thư mục nếu chưa tồn tại
+                    var uploadPath = Path.Combine(_environment.WebRootPath, ThumbnailFolder);
+                    if (!Directory.Exists(uploadPath))
+                        Directory.CreateDirectory(uploadPath);
+
+                    // Tạo tên file duy nhất
+                    var fileName = $"{Guid.NewGuid()}{fileExtension}";
+                    var filePath = Path.Combine(uploadPath, fileName);
+
+                    // Xử lý và nén ảnh
+                    using (var image = await Image.LoadAsync(dto.Thumbnail.OpenReadStream()))
+                    {
+                        // Tính toán kích thước mới giữ nguyên tỷ lệ
+                        var maxDimension = 800; // Kích thước tối đa cho chiều dài hoặc rộng
+                        var ratio = Math.Min((float)maxDimension / image.Width, (float)maxDimension / image.Height);
+                        var newWidth = (int)(image.Width * ratio);
+                        var newHeight = (int)(image.Height * ratio);
+
+                        // Resize ảnh
+                        image.Mutate(x => x.Resize(newWidth, newHeight));
+
+                        // Lưu ảnh đã nén
+                        await image.SaveAsJpegAsync(filePath, new JpegEncoder
+                        {
+                            Quality = 80 // Chất lượng ảnh (0-100)
+                        });
+                    }
+
+                    thumbnailPath = $"/{ThumbnailFolder}/{fileName}";
+                }
+
                 // Tạo entity khóa học kèm chương trình học
                 var course = new courses
                 {
                     Name = dto.Name,
                     Price = dto.Price,
                     Description = dto.Description,
-                    ImageUrl = dto.ImageUrl,
+                    Thumbnail = thumbnailPath,
                     VideoDemoUrl = dto.VideoDemoUrl,
                     Status = (CourseStatus)dto.Status,
                     Level = (CourseLevel)dto.Level,
@@ -279,7 +331,7 @@ namespace webApi.Controllers
                         Name = course.Name,
                         Price = course.Price,
                         Description = course.Description,
-                        ImageUrl = course.ImageUrl,
+                        Thumbnail = course.Thumbnail,
                         VideoDemoUrl = course.VideoDemoUrl,
                         Status = (int)course.Status,
                         StatusText = course.StatusText,
@@ -332,7 +384,6 @@ namespace webApi.Controllers
                 course.Name = updateDto.Name;
                 course.Price = updateDto.Price;
                 course.Description = updateDto.Description;
-                course.ImageUrl = updateDto.ImageUrl;
                 course.VideoDemoUrl = updateDto.VideoDemoUrl;
                 course.Status = (CourseStatus)updateDto.Status;
                 course.Level = (CourseLevel)updateDto.Level;
@@ -462,7 +513,7 @@ namespace webApi.Controllers
                         Name = c.Name,
                         Price = c.Price,
                         Description = c.Description,
-                        ImageUrl = c.ImageUrl,
+                        Thumbnail = c.Thumbnail,
                         Status = c.Status,
                         StatusText = c.StatusText,
                         Level = c.Level,
@@ -563,6 +614,86 @@ namespace webApi.Controllers
                 return null;
 
             return allLessons[currentIndex + 1];
+        }
+
+        // Upload thumbnail cho khóa học
+        [HttpPost("{id}/thumbnail")]
+        public async Task<IActionResult> UploadThumbnail(int id, IFormFile file)
+        {
+            try
+            {
+                if (file == null || file.Length == 0)
+                    return BadRequest("Không có file được chọn");
+
+                if (file.Length > MaxFileSizeInBytes)
+                    return BadRequest("Kích thước file không được vượt quá 1MB");
+
+                // Kiểm tra định dạng file
+                var allowedExtensions = new[] { ".jpg", ".jpeg", ".png" };
+                var fileExtension = Path.GetExtension(file.FileName).ToLowerInvariant();
+                if (!allowedExtensions.Contains(fileExtension))
+                    return BadRequest("Chỉ chấp nhận file ảnh (jpg, jpeg, png)");
+
+                // Tạo thư mục nếu chưa tồn tại
+                var uploadPath = Path.Combine(_environment.WebRootPath, ThumbnailFolder);
+                if (!Directory.Exists(uploadPath))
+                    Directory.CreateDirectory(uploadPath);
+
+                // Tạo tên file duy nhất
+                var fileName = $"{id}_{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(uploadPath, fileName);
+
+                // Xử lý và nén ảnh
+                using (var image = await Image.LoadAsync(file.OpenReadStream()))
+                {
+                    // Tính toán kích thước mới giữ nguyên tỷ lệ
+                    var maxDimension = 800; // Kích thước tối đa cho chiều dài hoặc rộng
+                    var ratio = Math.Min((float)maxDimension / image.Width, (float)maxDimension / image.Height);
+                    var newWidth = (int)(image.Width * ratio);
+                    var newHeight = (int)(image.Height * ratio);
+
+                    // Resize ảnh
+                    image.Mutate(x => x.Resize(newWidth, newHeight));
+
+                    // Lưu ảnh đã nén
+                    await image.SaveAsJpegAsync(filePath, new JpegEncoder
+                    {
+                        Quality = 80 // Chất lượng ảnh (0-100)
+                    });
+                }
+
+                // Cập nhật đường dẫn thumbnail trong database
+                var course = await _context.courses.FindAsync(id);
+                if (course == null)
+                {
+                    // Xóa file nếu không tìm thấy khóa học
+                    System.IO.File.Delete(filePath);
+                    return NotFound("Không tìm thấy khóa học");
+                }
+
+                // Xóa thumbnail cũ nếu có
+                if (!string.IsNullOrEmpty(course.Thumbnail))
+                {
+                    var oldThumbnailPath = Path.Combine(_environment.WebRootPath, course.Thumbnail.TrimStart('/'));
+                    if (System.IO.File.Exists(oldThumbnailPath))
+                    {
+                        System.IO.File.Delete(oldThumbnailPath);
+                    }
+                }
+
+                // Cập nhật đường dẫn mới
+                course.Thumbnail = $"/{ThumbnailFolder}/{fileName}";
+                await _context.SaveChangesAsync();
+
+                return Ok(new { 
+                    message = "Upload thumbnail thành công",
+                    thumbnailUrl = course.Thumbnail
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
         }
     }
 }

@@ -125,7 +125,7 @@ namespace webApi.Controllers
                     ci.Course.Name,
                     ci.Course.Price,
                     ci.Course.Description,
-                    ci.Course.ImageUrl,
+                    ci.Course.Thumbnail,
                     Level = ci.Course.LevelText,
                     Instructor = ci.Course.Instructor != null ? new {
                         Name = ci.Course.Instructor.FirstName,

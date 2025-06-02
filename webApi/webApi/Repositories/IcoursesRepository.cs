@@ -18,7 +18,7 @@ namespace webApi.Repositories
         public string Name { get; set; }
         public decimal Price { get; set; }
         public string Description { get; set; }
-        public string ImageUrl { get; set; }
+        public string Thumbnail { get; set; }
         public CourseStatus Status { get; set; }
         public string StatusText { get; set; }
         public CourseLevel Level { get; set; }

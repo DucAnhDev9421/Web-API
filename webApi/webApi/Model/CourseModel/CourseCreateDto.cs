@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Http;
 
 namespace webApi.Model.CourseModel
 {
@@ -20,7 +21,7 @@ namespace webApi.Model.CourseModel
         public string Name { get; set; }
         public decimal Price { get; set; }
         public string Description { get; set; }
-        public string ImageUrl { get; set; }
+        public IFormFile Thumbnail { get; set; }
         public string VideoDemoUrl { get; set; }
         public int Status { get; set; }
         public int Level { get; set; }

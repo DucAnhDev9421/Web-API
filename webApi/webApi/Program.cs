@@ -8,6 +8,8 @@ using webApi.Repositories;
 using Microsoft.OpenApi.Models;
 using System.Collections.Generic;
 using webApi.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,6 +83,12 @@ builder.Services.AddSwaggerGen(c =>
             new string[] {}
         }
     });
+});
+
+// Cấu hình cho phép tải file lớn
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10MB
 });
 
 builder.Services.AddScoped<IcoursesRepository, coursesRepository>();

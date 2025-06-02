@@ -39,7 +39,7 @@ namespace webApi.Model.CourseModel
         public string Description { get; set; }
 
         [StringLength(500)]
-        public string ImageUrl { get; set; }
+        public string Thumbnail { get; set; }
 
         public string VideoDemoUrl { get; set; }
 

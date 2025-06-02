@@ -41,7 +41,7 @@ namespace webApi.Controllers
                         Name = c.Name,
                         Description = c.Description,
                         Price = c.Price,
-                        ImageUrl = c.ImageUrl
+                        Thumbnail = c.Thumbnail
                     })
                     .ToListAsync();
 
