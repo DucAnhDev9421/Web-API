@@ -12,16 +12,13 @@ namespace webApi.Controllers
     {
         private readonly INoteRepository _noteRepository;
         private readonly IUserRepository _userRepository;
-        private readonly IVideoRepository _videoRepository;
 
         public NotesController(
             INoteRepository noteRepository, 
-            IUserRepository userRepository,
-            IVideoRepository videoRepository)
+            IUserRepository userRepository)
         {
             _noteRepository = noteRepository;
             _userRepository = userRepository;
-            _videoRepository = videoRepository;
         }
 
         [HttpGet("{id}")]
@@ -38,9 +35,10 @@ namespace webApi.Controllers
                 Id = note.Id,
                 Title = note.Title,
                 Content = note.Content,
-                VideoId = note.VideoId,
                 UserId = note.UserId,
                 UserName = note.User?.Username ?? "Unknown",
+                LessonId = note.LessonId,
+                LessonTitle = note.Lesson?.Title,
                 CreatedAt = note.CreatedAt,
                 UpdatedAt = note.UpdatedAt
             };
@@ -58,9 +56,10 @@ namespace webApi.Controllers
                 Id = note.Id,
                 Title = note.Title,
                 Content = note.Content,
-                VideoId = note.VideoId,
                 UserId = note.UserId,
                 UserName = note.User?.Username ?? "Unknown",
+                LessonId = note.LessonId,
+                LessonTitle = note.Lesson?.Title,
                 CreatedAt = note.CreatedAt,
                 UpdatedAt = note.UpdatedAt
             }).ToList();
@@ -76,13 +75,6 @@ namespace webApi.Controllers
                 return BadRequest(ModelState);
             }
 
-            // Kiểm tra video tồn tại
-            var video = await _videoRepository.GetVideoByIdAsync(noteDto.VideoId);
-            if (video == null)
-            {
-                return BadRequest("Video không tồn tại");
-            }
-
             // Kiểm tra user tồn tại
             var user = await _userRepository.GetUserByIdAsync(noteDto.UserId);
             if (user == null)
@@ -94,8 +86,8 @@ namespace webApi.Controllers
             {
                 Title = noteDto.Title,
                 Content = noteDto.Content,
-                VideoId = noteDto.VideoId,
                 UserId = noteDto.UserId,
+                LessonId = noteDto.LessonId,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -106,9 +98,10 @@ namespace webApi.Controllers
                 Id = note.Id,
                 Title = note.Title,
                 Content = note.Content,
-                VideoId = note.VideoId,
                 UserId = note.UserId,
                 UserName = user.Username,
+                LessonId = note.LessonId,
+                LessonTitle = note.Lesson?.Title,
                 CreatedAt = note.CreatedAt,
                 UpdatedAt = note.UpdatedAt
             };
@@ -139,6 +132,7 @@ namespace webApi.Controllers
             // Cập nhật thông tin ghi chú
             existingNote.Title = updateDto.Title;
             existingNote.Content = updateDto.Content;
+            existingNote.LessonId = updateDto.LessonId;
             existingNote.UpdatedAt = DateTime.UtcNow;
 
             await _noteRepository.UpdateNoteAsync(existingNote);
@@ -150,9 +144,10 @@ namespace webApi.Controllers
                 Id = existingNote.Id,
                 Title = existingNote.Title,
                 Content = existingNote.Content,
-                VideoId = existingNote.VideoId,
                 UserId = existingNote.UserId,
                 UserName = user?.Username ?? "Unknown",
+                LessonId = existingNote.LessonId,
+                LessonTitle = existingNote.Lesson?.Title,
                 CreatedAt = existingNote.CreatedAt,
                 UpdatedAt = existingNote.UpdatedAt
             };
@@ -184,26 +179,6 @@ namespace webApi.Controllers
             return NoContent();
         }
         
-        [HttpGet("video/{videoId}")]
-        public async Task<IActionResult> GetNotesByVideoId(int videoId)
-        {
-            var notes = await _noteRepository.GetNotesByVideoIdAsync(videoId);
-            
-            var response = notes.Select(note => new NoteResponseDto
-            {
-                Id = note.Id,
-                Title = note.Title,
-                Content = note.Content,
-                VideoId = note.VideoId,
-                UserId = note.UserId,
-                UserName = note.User?.Username ?? "Unknown",
-                CreatedAt = note.CreatedAt,
-                UpdatedAt = note.UpdatedAt
-            }).ToList();
-            
-            return Ok(response);
-        }
-        
         [HttpGet("user/{userId}")]
         public async Task<IActionResult> GetNotesByUserId(string userId)
         {
@@ -214,9 +189,31 @@ namespace webApi.Controllers
                 Id = note.Id,
                 Title = note.Title,
                 Content = note.Content,
-                VideoId = note.VideoId,
                 UserId = note.UserId,
                 UserName = note.User?.Username ?? "Unknown",
+                LessonId = note.LessonId,
+                LessonTitle = note.Lesson?.Title,
+                CreatedAt = note.CreatedAt,
+                UpdatedAt = note.UpdatedAt
+            }).ToList();
+            
+            return Ok(response);
+        }
+
+        [HttpGet("lesson/{lessonId}")]
+        public async Task<IActionResult> GetNotesByLessonId(int lessonId)
+        {
+            var notes = await _noteRepository.GetNotesByLessonIdAsync(lessonId);
+            
+            var response = notes.Select(note => new NoteResponseDto
+            {
+                Id = note.Id,
+                Title = note.Title,
+                Content = note.Content,
+                UserId = note.UserId,
+                UserName = note.User?.Username ?? "Unknown",
+                LessonId = note.LessonId,
+                LessonTitle = note.Lesson?.Title,
                 CreatedAt = note.CreatedAt,
                 UpdatedAt = note.UpdatedAt
             }).ToList();

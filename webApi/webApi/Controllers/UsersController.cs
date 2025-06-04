@@ -7,6 +7,10 @@ using webApi.Model.UserModel;
 using webApi.Repositories;
 using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System;
 
 namespace webApi.Controllers
 {
@@ -19,19 +23,22 @@ namespace webApi.Controllers
         private readonly IUserRepository _userRepository;
         private readonly IUserCourseProgressRepository _userCourseProgressRepository;
         private readonly INoteRepository _noteRepository;
+        private readonly ApplicationDbContext _context;
 
         public UsersController(
             IHttpClientFactory httpClientFactory, 
             IConfiguration configuration,
             IUserRepository userRepository,
             IUserCourseProgressRepository userCourseProgressRepository,
-            INoteRepository noteRepository)
+            INoteRepository noteRepository,
+            ApplicationDbContext context)
         {
             _httpClientFactory = httpClientFactory;
             _configuration = configuration;
             _userRepository = userRepository;
             _userCourseProgressRepository = userCourseProgressRepository;
             _noteRepository = noteRepository;
+            _context = context;
         }
 
         [HttpGet("{id}")]
@@ -39,14 +46,7 @@ namespace webApi.Controllers
         {
             try
             {
-                // Kiểm tra trong database trước
-                var userFromDb = await _userRepository.GetUserByIdAsync(id);
-                if (userFromDb != null)
-                {
-                    return Ok(userFromDb);
-                }
-
-                // Nếu không có trong database, lấy từ Clerk
+                // Lấy thông tin từ Clerk
                 var client = _httpClientFactory.CreateClient("Clerk");
                 var secretKey = _configuration["Clerk:SecretKey"];
                 
@@ -76,8 +76,8 @@ namespace webApi.Controllers
                     userData.Email = $"{id}@temp.com";
                 }
 
-                // Lấy role từ public_metadata
-                userData.Role = userData.PublicMetadata?.Role ?? "user";
+                // Lấy role từ private_metadata
+                userData.Role = userData.PrivateMetadata?.Role ?? "user";
 
                 // Đảm bảo các trường bắt buộc không null
                 userData.Username ??= id;
@@ -135,11 +135,7 @@ namespace webApi.Controllers
                     first_name = updateDto.FirstName,
                     last_name = updateDto.LastName,
                     image_url = updateDto.ImageUrl,
-                    profile_image_url = updateDto.ProfileImageUrl,
-                    public_metadata = new
-                    {
-                        role = updateDto.Role
-                    }
+                    profile_image_url = updateDto.ProfileImageUrl
                 };
 
                 var content = new StringContent(
@@ -161,7 +157,6 @@ namespace webApi.Controllers
                 userFromDb.LastName = updateDto.LastName;
                 userFromDb.ImageUrl = updateDto.ImageUrl;
                 userFromDb.ProfileImageUrl = updateDto.ProfileImageUrl;
-                userFromDb.Role = updateDto.Role;
                 userFromDb.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(userFromDb);
@@ -263,7 +258,9 @@ namespace webApi.Controllers
                 return Ok(new {
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    imageUrl = user.ImageUrl
+                    imageUrl = user.ImageUrl,
+                    jobTitle = user.JobTitle,
+                    bio = user.Bio
                 });
             }
             catch (Exception ex)
@@ -373,7 +370,6 @@ namespace webApi.Controllers
                 {
                     Title = createNoteDto.Title,
                     Content = createNoteDto.Content,
-                    VideoId = createNoteDto.VideoId,
                     UserId = id,
                     CreatedAt = DateTime.UtcNow
                 };
@@ -466,7 +462,10 @@ namespace webApi.Controllers
                 {
                     first_name = updateDto.FirstName,
                     last_name = updateDto.LastName,
-                    image_url = updateDto.ImageUrl
+                    public_metadata = new {
+                        jobTitle = updateDto.JobTitle,
+                        bio = updateDto.Bio
+                    }
                 };
 
                 var content = new StringContent(
@@ -485,7 +484,8 @@ namespace webApi.Controllers
                 // Cập nhật thông tin trong database
                 user.FirstName = updateDto.FirstName;
                 user.LastName = updateDto.LastName;
-                user.ImageUrl = updateDto.ImageUrl;
+                user.JobTitle = updateDto.JobTitle;
+                user.Bio = updateDto.Bio;
                 user.UpdatedAt = DateTime.UtcNow;
 
                 await _userRepository.CreateOrUpdateUserAsync(user);
@@ -493,7 +493,8 @@ namespace webApi.Controllers
                 return Ok(new {
                     firstName = user.FirstName,
                     lastName = user.LastName,
-                    imageUrl = user.ImageUrl,
+                    jobTitle = user.JobTitle,
+                    bio = user.Bio,
                     message = "Cập nhật thông tin thành công"
                 });
             }
@@ -508,17 +509,36 @@ namespace webApi.Controllers
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(id);
+                var user = await _context.Users
+                    .Include(u => u.Courses)
+                        .ThenInclude(c => c.Enrollments)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
                 if (user == null)
                 {
                     return NotFound("Không tìm thấy thông tin giảng viên");
                 }
 
+                // Tính toán thống kê
+                var totalCourses = user.Courses?.Count ?? 0;
+                var totalStudents = user.Courses?.Sum(c => c.Enrollments?.Count ?? 0) ?? 0;
+                var averageRating = user.Courses?.Any() == true 
+                    ? Math.Round(user.Courses.Average(c => c.Ratings?.Average(r => r.RatingValue) ?? 0), 1)
+                    : 0;
+
                 var instructorInfo = new InstructorInfo
                 {
                     Id = user.Id,
                     Username = user.Username,
-                    ImageUrl = user.ImageUrl
+                    ImageUrl = user.ImageUrl,
+                    JobTitle = user.JobTitle,
+                    Bio = user.Bio,
+                    Statistics = new InstructorStatistics
+                    {
+                        TotalCourses = totalCourses,
+                        TotalStudents = totalStudents,
+                        AverageRating = averageRating
+                    }
                 };
 
                 return Ok(instructorInfo);
@@ -563,8 +583,8 @@ namespace webApi.Controllers
                     userData.Email = $"{id}@temp.com";
                 }
 
-                // Lấy role từ public_metadata
-                userData.Role = userData.PublicMetadata?.Role ?? "user";
+                // Lấy role từ private_metadata
+                userData.Role = userData.PrivateMetadata?.Role ?? "user";
 
                 // Đảm bảo các trường bắt buộc không null
                 userData.Username ??= id;
@@ -597,6 +617,178 @@ namespace webApi.Controllers
                     message = "Đồng bộ thông tin người dùng thành công",
                     user = userData
                 });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPut("{id}/role")]
+        public async Task<IActionResult> UpdateUserRole(string id, [FromBody] UpdateRoleDto updateRoleDto)
+        {
+            try
+            {
+                if (!ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                // Kiểm tra trong database
+                var userFromDb = await _userRepository.GetUserByIdAsync(id);
+                if (userFromDb == null)
+                {
+                    return NotFound("Không tìm thấy người dùng");
+                }
+
+                // Cập nhật role trên Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+
+                // Tạo request body cho Clerk API
+                var updateData = new
+                {
+                    public_metadata = new
+                    {
+                        role = updateRoleDto.Role
+                    }
+                };
+
+                var content = new StringContent(
+                    JsonSerializer.Serialize(updateData),
+                    System.Text.Encoding.UTF8,
+                    "application/json"
+                );
+
+                var response = await client.PatchAsync($"users/{id}", content);
+
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không thể cập nhật role người dùng trên Clerk");
+                }
+
+                // Cập nhật role trong database
+                userFromDb.Role = updateRoleDto.Role;
+                userFromDb.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.CreateOrUpdateUserAsync(userFromDb);
+
+                return Ok(new { 
+                    message = "Cập nhật role thành công",
+                    role = userFromDb.Role
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpPost("{id}/sync-role")]
+        public async Task<IActionResult> SyncUserRole(string id)
+        {
+            try
+            {
+                // Lấy thông tin từ Clerk
+                var client = _httpClientFactory.CreateClient("Clerk");
+                var secretKey = _configuration["Clerk:SecretKey"];
+                
+                client.DefaultRequestHeaders.Add("Authorization", $"Bearer {secretKey}");
+                
+                var response = await client.GetAsync($"users/{id}");
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    return StatusCode((int)response.StatusCode, "Không tìm thấy thông tin người dùng từ Clerk");
+                }
+
+                var content = await response.Content.ReadAsStringAsync();
+                var userData = JsonSerializer.Deserialize<UserInfo>(content);
+
+                // Lấy role từ public_metadata
+                var role = userData.PublicMetadata?.Role ?? "user";
+
+                // Kiểm tra trong database
+                var userFromDb = await _userRepository.GetUserByIdAsync(id);
+                if (userFromDb == null)
+                {
+                    return NotFound("Không tìm thấy người dùng trong database");
+                }
+
+                // Cập nhật role trong database
+                userFromDb.Role = role;
+                userFromDb.UpdatedAt = DateTime.UtcNow;
+
+                await _userRepository.CreateOrUpdateUserAsync(userFromDb);
+
+                return Ok(new { 
+                    message = "Đồng bộ role thành công",
+                    role = role
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Lỗi server: {ex.Message}");
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetUsers()
+        {
+            try
+            {
+                var users = await _context.Users
+                    .Include(u => u.Enrollments)
+                    .Include(u => u.Courses)
+                        .ThenInclude(c => c.Ratings)
+                    .ToListAsync();
+
+                var userList = new List<object>();
+
+                foreach (var user in users)
+                {
+                    if (user.Role?.ToLower() == "instructor")
+                    {
+                        // Thông tin cho giảng viên
+                        var instructorInfo = new
+                        {
+                            id = user.Id,
+                            firstName = user.FirstName,
+                            lastName = user.LastName,
+                            imageUrl = user.ImageUrl,
+                            role = user.Role,
+                            joinedAt = user.CreatedAt,
+                            courses = new
+                            {
+                                total = user.Courses?.Count ?? 0,
+                                students = user.Courses?.Sum(c => c.Enrollments?.Count ?? 0) ?? 0,
+                                rating = user.Courses?.Any() == true 
+                                    ? Math.Round(user.Courses.Average(c => c.Ratings?.Average(r => r.RatingValue) ?? 0), 1)
+                                    : 0
+                            }
+                        };
+                        userList.Add(instructorInfo);
+                    }
+                    else
+                    {
+                        // Thông tin cho người dùng thông thường
+                        var userInfo = new
+                        {
+                            id = user.Id,
+                            firstName = user.FirstName,
+                            lastName = user.LastName,
+                            imageUrl = user.ImageUrl,
+                            role = user.Role ?? "user",
+                            joinedAt = user.CreatedAt,
+                            enrolledCourses = user.Enrollments?.Count ?? 0
+                        };
+                        userList.Add(userInfo);
+                    }
+                }
+
+                return Ok(userList);
             }
             catch (Exception ex)
             {
@@ -639,7 +831,8 @@ namespace webApi.Controllers
         [Required(ErrorMessage = "Họ không được để trống")]
         public string LastName { get; set; }
 
-        public string ImageUrl { get; set; }
+        public string JobTitle { get; set; }
+        public string Bio { get; set; }
     }
 
     public class InstructorInfo
@@ -647,5 +840,21 @@ namespace webApi.Controllers
         public string Id { get; set; }
         public string Username { get; set; }
         public string ImageUrl { get; set; }
+        public string JobTitle { get; set; }
+        public string Bio { get; set; }
+        public InstructorStatistics Statistics { get; set; }
+    }
+
+    public class InstructorStatistics
+    {
+        public int TotalCourses { get; set; }
+        public int TotalStudents { get; set; }
+        public double AverageRating { get; set; }
+    }
+
+    public class UpdateRoleDto
+    {
+        [Required(ErrorMessage = "Role không được để trống")]
+        public string Role { get; set; }
     }
 } 

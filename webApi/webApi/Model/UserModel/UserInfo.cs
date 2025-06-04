@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Text.Json.Serialization;
+using webApi.Model.CourseModel;
 
 namespace webApi.Model.UserModel
 {
@@ -49,8 +50,22 @@ namespace webApi.Model.UserModel
         [NotMapped]
         public PublicMetadata PublicMetadata { get; set; }
 
+        [JsonPropertyName("private_metadata")]
+        [NotMapped]
+        public PrivateMetadata PrivateMetadata { get; set; }
+
+        [StringLength(100)]
+        public string JobTitle { get; set; }
+
+        [StringLength(1000)]
+        public string Bio { get; set; }
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime? UpdatedAt { get; set; }
+
+        // Navigation properties
+        public virtual ICollection<Enrollment> Enrollments { get; set; }
+        public virtual ICollection<courses> Courses { get; set; }
     }
 
     public class EmailAddress
@@ -60,6 +75,12 @@ namespace webApi.Model.UserModel
     }
 
     public class PublicMetadata
+    {
+        [JsonPropertyName("role")]
+        public string Role { get; set; }
+    }
+
+    public class PrivateMetadata
     {
         [JsonPropertyName("role")]
         public string Role { get; set; }

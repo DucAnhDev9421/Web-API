@@ -9,11 +9,11 @@ namespace webApi.Model
 
         public string Content { get; set; }
 
-        [Required(ErrorMessage = "VideoId không được để trống")]
-        public int VideoId { get; set; }
-
         [Required(ErrorMessage = "UserId không được để trống")]
         public string UserId { get; set; }
+
+        [Required(ErrorMessage = "LessonId không được để trống")]
+        public int LessonId { get; set; }
     }
 
     public class UpdateNoteDto
@@ -25,6 +25,9 @@ namespace webApi.Model
 
         [Required(ErrorMessage = "UserId không được để trống")]
         public string UserId { get; set; }
+
+        [Required(ErrorMessage = "LessonId không được để trống")]
+        public int LessonId { get; set; }
     }
 
     public class NoteResponseDto
@@ -32,9 +35,10 @@ namespace webApi.Model
         public int Id { get; set; }
         public string Title { get; set; }
         public string Content { get; set; }
-        public int VideoId { get; set; }
         public string UserId { get; set; }
         public string UserName { get; set; }
+        public int LessonId { get; set; }
+        public string LessonTitle { get; set; }
         public DateTime CreatedAt { get; set; }
         public DateTime? UpdatedAt { get; set; }
     }

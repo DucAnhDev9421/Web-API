@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using webApi.Model;
 using webApi.Model.CartModel;
+using webApi.Model.CourseModel;
 
 namespace webApi.Controllers
 {
@@ -101,6 +102,14 @@ namespace webApi.Controllers
             var cart = await _context.Carts
                 .Include(c => c.CartItems)
                 .ThenInclude(ci => ci.Course)
+                    .ThenInclude(c => c.Instructor)
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Course)
+                    .ThenInclude(c => c.Sections)
+                        .ThenInclude(s => s.Lessons)
+                .Include(c => c.CartItems)
+                .ThenInclude(ci => ci.Course)
+                    .ThenInclude(c => c.Ratings)
                 .FirstOrDefaultAsync(c => c.UserId == userId);
 
             if (cart == null || cart.CartItems == null || !cart.CartItems.Any())
@@ -114,7 +123,23 @@ namespace webApi.Controllers
                 ci.AddedAt,
                 Course = new {
                     ci.Course.Name,
-                    ci.Course.Price
+                    ci.Course.Price,
+                    ci.Course.Description,
+                    ci.Course.ImageUrl,
+                    Level = ci.Course.LevelText,
+                    Instructor = ci.Course.Instructor != null ? new {
+                        Name = ci.Course.Instructor.FirstName,
+                        ImageUrl = ci.Course.Instructor.ImageUrl
+                    } : null,
+                    TotalLessons = ci.Course.Sections?.Sum(s => s.Lessons?.Count ?? 0) ?? 0,
+                    TotalDuration = ci.Course.Sections?
+                        .SelectMany(s => s.Lessons ?? new List<Lesson>())
+                        .Where(l => l.Type == LessonType.Video && !string.IsNullOrEmpty(l.Duration))
+                        .Sum(l => TimeSpan.Parse(l.Duration).TotalHours),
+                    Rating = ci.Course.Ratings?.Any() == true 
+                        ? Math.Round(ci.Course.Ratings.Average(r => r.RatingValue), 1)
+                        : 0,
+                    TotalRatings = ci.Course.Ratings?.Count ?? 0
                 }
             });
             return Ok(result);

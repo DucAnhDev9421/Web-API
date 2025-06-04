@@ -15,5 +15,8 @@ namespace webApi.Model.UserModel
 
         public string ImageUrl { get; set; }
         public string ProfileImageUrl { get; set; }
+
+        public string JobTitle { get; set; }
+        public string Bio { get; set; }
     }
 } 

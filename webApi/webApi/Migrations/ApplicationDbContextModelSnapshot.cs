@@ -93,6 +93,88 @@ namespace webApi.Migrations
                     b.ToTable("Categories");
                 });
 
+            modelBuilder.Entity("webApi.Model.CouponModel.Coupon", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Code")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<int?>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<decimal>("DiscountAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("EndDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsAutoApply")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("StartDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsageCount")
+                        .HasColumnType("int");
+
+                    b.Property<int>("UsageLimit")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("Coupons");
+                });
+
+            modelBuilder.Entity("webApi.Model.CouponModel.CouponUsage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CouponId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UsedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CouponId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("CouponUsages");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.Lesson", b =>
                 {
                     b.Property<int>("Id")
@@ -102,6 +184,10 @@ namespace webApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<string>("Content")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Duration")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
@@ -196,6 +282,10 @@ namespace webApi.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<string>("Topics")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("VideoDemoUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -218,7 +308,8 @@ namespace webApi.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("CourseId");
 
                     b.Property<DateTime>("EnrolledAt")
                         .HasColumnType("datetime2");
@@ -236,6 +327,32 @@ namespace webApi.Migrations
                     b.ToTable("Enrollments");
                 });
 
+            modelBuilder.Entity("webApi.Model.LessonProgress", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LessonProgresses");
+                });
+
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
                     b.Property<int>("Id")
@@ -251,6 +368,9 @@ namespace webApi.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -262,14 +382,11 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("VideoId")
-                        .HasColumnType("int");
-
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("LessonId");
 
-                    b.HasIndex("VideoId");
+                    b.HasIndex("UserId");
 
                     b.ToTable("Notes");
                 });
@@ -287,7 +404,8 @@ namespace webApi.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("CourseId")
-                        .HasColumnType("int");
+                        .HasColumnType("int")
+                        .HasColumnName("CourseId");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
@@ -302,13 +420,60 @@ namespace webApi.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<int?>("coursesId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CourseId");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("coursesId");
+
                     b.ToTable("Ratings");
+                });
+
+            modelBuilder.Entity("webApi.Model.SlideModel.Slide", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("LinkUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("Order")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Subtitle")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Slides");
                 });
 
             modelBuilder.Entity("webApi.Model.UserModel.UserCourseProgress", b =>
@@ -386,6 +551,11 @@ namespace webApi.Migrations
                         .HasColumnType("nvarchar(450)")
                         .HasAnnotation("Relational:JsonPropertyName", "id");
 
+                    b.Property<string>("Bio")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -406,6 +576,11 @@ namespace webApi.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)")
                         .HasAnnotation("Relational:JsonPropertyName", "image_url");
+
+                    b.Property<string>("JobTitle")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
@@ -535,6 +710,34 @@ namespace webApi.Migrations
                     b.Navigation("Course");
                 });
 
+            modelBuilder.Entity("webApi.Model.CouponModel.Coupon", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany()
+                        .HasForeignKey("CourseId");
+
+                    b.Navigation("Course");
+                });
+
+            modelBuilder.Entity("webApi.Model.CouponModel.CouponUsage", b =>
+                {
+                    b.HasOne("webApi.Model.CouponModel.Coupon", "Coupon")
+                        .WithMany("CouponUsages")
+                        .HasForeignKey("CouponId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("webApi.Model.UserModel.UserInfo", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Coupon");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.Lesson", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.Section", "Section")
@@ -583,7 +786,7 @@ namespace webApi.Migrations
                         .HasForeignKey("CategoryId");
 
                     b.HasOne("webApi.Model.UserModel.UserInfo", "Instructor")
-                        .WithMany()
+                        .WithMany("Courses")
                         .HasForeignKey("InstructorId");
 
                     b.Navigation("Category");
@@ -594,13 +797,13 @@ namespace webApi.Migrations
             modelBuilder.Entity("webApi.Model.Enrollment", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.courses", "Course")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("CourseId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("webApi.Model.UserModel.UserInfo", "User")
-                        .WithMany()
+                        .WithMany("Enrollments")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -612,21 +815,21 @@ namespace webApi.Migrations
 
             modelBuilder.Entity("webApi.Model.Note", b =>
                 {
+                    b.HasOne("webApi.Model.CourseModel.Lesson", "Lesson")
+                        .WithMany()
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.HasOne("webApi.Model.UserModel.UserInfo", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("webApi.Model.Video", "Video")
-                        .WithMany()
-                        .HasForeignKey("VideoId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                    b.Navigation("Lesson");
 
                     b.Navigation("User");
-
-                    b.Navigation("Video");
                 });
 
             modelBuilder.Entity("webApi.Model.Rating", b =>
@@ -642,6 +845,10 @@ namespace webApi.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("webApi.Model.CourseModel.courses", null)
+                        .WithMany("Ratings")
+                        .HasForeignKey("coursesId");
 
                     b.Navigation("Course");
 
@@ -710,6 +917,11 @@ namespace webApi.Migrations
                     b.Navigation("CartItems");
                 });
 
+            modelBuilder.Entity("webApi.Model.CouponModel.Coupon", b =>
+                {
+                    b.Navigation("CouponUsages");
+                });
+
             modelBuilder.Entity("webApi.Model.CourseModel.Section", b =>
                 {
                     b.Navigation("Lessons");
@@ -717,7 +929,18 @@ namespace webApi.Migrations
 
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
                 {
+                    b.Navigation("Enrollments");
+
+                    b.Navigation("Ratings");
+
                     b.Navigation("Sections");
+                });
+
+            modelBuilder.Entity("webApi.Model.UserModel.UserInfo", b =>
+                {
+                    b.Navigation("Courses");
+
+                    b.Navigation("Enrollments");
                 });
 #pragma warning restore 612, 618
         }

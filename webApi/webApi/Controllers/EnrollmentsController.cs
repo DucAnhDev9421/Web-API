@@ -49,7 +49,8 @@ namespace webApi.Controllers
                     e.Course.Id,
                     e.Course.Name,
                     e.Course.Description,
-                    e.Course.StatusText
+                    e.Course.StatusText,
+                    e.Course.ImageUrl
                 } : null
             });
             return Ok(result);

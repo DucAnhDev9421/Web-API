@@ -2,23 +2,25 @@ using System.Collections.Generic;
 
 namespace webApi.Model.CourseModel
 {
-    public class LessonResponseDto
+    public class LessonUpdateDto
     {
         public int Id { get; set; }
         public string Title { get; set; }
         public int Type { get; set; }
+        public int SectionId { get; set; }
         public string Content { get; set; }
         public string Duration { get; set; }
     }
 
-    public class SectionResponseDto
+    public class SectionUpdateDto
     {
         public int Id { get; set; }
         public string Title { get; set; }
-        public List<LessonResponseDto> Lessons { get; set; }
+        public int CourseId { get; set; }
+        public List<LessonUpdateDto> Lessons { get; set; }
     }
 
-    public class CourseResponseDto
+    public class CourseUpdateDto
     {
         public int Id { get; set; }
         public string Name { get; set; }
@@ -27,16 +29,10 @@ namespace webApi.Model.CourseModel
         public string ImageUrl { get; set; }
         public string VideoDemoUrl { get; set; }
         public int Status { get; set; }
-        public string StatusText { get; set; }
         public int Level { get; set; }
-        public string LevelText { get; set; }
-        public int? CategoryId { get; set; }
-        public List<SectionResponseDto> Sections { get; set; }
-        public InstructorInfo Instructor { get; set; }
-        public string TotalDuration { get; set; }
+        public int CategoryId { get; set; }
+        public string InstructorId { get; set; }
+        public List<SectionUpdateDto> Sections { get; set; }
         public List<string> Topics { get; set; }
-        public double AverageRating { get; set; }
-        public int TotalRatings { get; set; }
-        public int EnrollmentCount { get; set; }
     }
 } 

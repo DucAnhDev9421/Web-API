@@ -17,7 +17,7 @@ namespace webApi.Repositories
         {
             return await _context.Notes
                 .Include(n => n.User)
-                .Include(n => n.Video)
+                .Include(n => n.Lesson)
                 .FirstOrDefaultAsync(n => n.Id == id);
         }
 
@@ -25,7 +25,7 @@ namespace webApi.Repositories
         {
             return await _context.Notes
                 .Include(n => n.User)
-                .Include(n => n.Video)
+                .Include(n => n.Lesson)
                 .ToListAsync();
         }
 
@@ -51,19 +51,22 @@ namespace webApi.Repositories
             }
         }
 
-        public async Task<List<Note>> GetNotesByVideoIdAsync(int videoId)
-        {
-            return await _context.Notes
-                .Include(n => n.User)
-                .Include(n => n.Video)
-                .Where(n => n.VideoId == videoId)
-                .ToListAsync();
-        }
-
         public async Task<List<Note>> GetNotesByUserIdAsync(string userId)
         {
             return await _context.Notes
+                .Include(n => n.User)
+                .Include(n => n.Lesson)
                 .Where(n => n.UserId == userId)
+                .OrderByDescending(n => n.CreatedAt)
+                .ToListAsync();
+        }
+
+        public async Task<List<Note>> GetNotesByLessonIdAsync(int lessonId)
+        {
+            return await _context.Notes
+                .Include(n => n.User)
+                .Include(n => n.Lesson)
+                .Where(n => n.LessonId == lessonId)
                 .OrderByDescending(n => n.CreatedAt)
                 .ToListAsync();
         }

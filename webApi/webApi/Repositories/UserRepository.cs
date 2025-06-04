@@ -21,27 +21,83 @@ namespace webApi.Repositories
 
         public async Task<UserInfo> CreateOrUpdateUserAsync(UserInfo user)
         {
-            var existingUser = await _context.Users.FindAsync(user.Id);
-            
-            if (existingUser == null)
+            try
             {
-                user.CreatedAt = DateTime.UtcNow;
-                _context.Users.Add(user);
-            }
-            else
-            {
-                existingUser.Email = user.Email;
-                existingUser.Username = user.Username;
-                existingUser.FirstName = user.FirstName;
-                existingUser.LastName = user.LastName;
-                existingUser.ImageUrl = user.ImageUrl;
-                existingUser.ProfileImageUrl = user.ProfileImageUrl;
-                existingUser.Role = user.Role;
-                existingUser.UpdatedAt = DateTime.UtcNow;
-            }
+                // Validate required fields
+                if (string.IsNullOrEmpty(user.Id))
+                    throw new ArgumentException("User ID is required");
+                if (string.IsNullOrEmpty(user.Email))
+                    throw new ArgumentException("Email is required");
 
-            await _context.SaveChangesAsync();
-            return user;
+                var existingUser = await _context.Users.FindAsync(user.Id);
+                
+                if (existingUser == null)
+                {
+                    // Tạo mới user
+                    user.CreatedAt = DateTime.UtcNow;
+                    user.UpdatedAt = DateTime.UtcNow;
+                    
+                    // Đảm bảo các trường không null
+                    user.Username ??= user.Id;
+                    user.FirstName ??= string.Empty;
+                    user.LastName ??= string.Empty;
+                    user.ImageUrl ??= string.Empty;
+                    user.ProfileImageUrl ??= string.Empty;
+                    user.Role ??= "user";
+                    user.JobTitle ??= string.Empty;
+                    user.Bio ??= string.Empty;
+
+                    _context.Users.Add(user);
+                }
+                else
+                {
+                    // Cập nhật thông tin user
+                    existingUser.Email = user.Email;
+                    existingUser.Username = user.Username ?? existingUser.Username;
+                    existingUser.FirstName = user.FirstName ?? existingUser.FirstName;
+                    existingUser.LastName = user.LastName ?? existingUser.LastName;
+                    existingUser.ImageUrl = user.ImageUrl ?? existingUser.ImageUrl;
+                    existingUser.ProfileImageUrl = user.ProfileImageUrl ?? existingUser.ProfileImageUrl;
+                    existingUser.Role = user.Role ?? existingUser.Role;
+                    existingUser.JobTitle = user.JobTitle ?? existingUser.JobTitle;
+                    existingUser.Bio = user.Bio ?? existingUser.Bio;
+                    existingUser.UpdatedAt = DateTime.UtcNow;
+
+                    // Cập nhật entity
+                    _context.Entry(existingUser).State = EntityState.Modified;
+                }
+
+                try
+                {
+                    await _context.SaveChangesAsync();
+                }
+                catch (DbUpdateException dbEx)
+                {
+                    // Log chi tiết lỗi database
+                    Console.WriteLine($"Database Error: {dbEx.Message}");
+                    if (dbEx.InnerException != null)
+                    {
+                        Console.WriteLine($"Inner Database Error: {dbEx.InnerException.Message}");
+                    }
+                    throw new Exception("Không thể lưu thông tin người dùng vào database", dbEx);
+                }
+
+                return existingUser ?? user;
+            }
+            catch (Exception ex)
+            {
+                // Log chi tiết lỗi
+                Console.WriteLine($"Lỗi khi lưu user: {ex.Message}");
+                if (ex.InnerException != null)
+                {
+                    Console.WriteLine($"Inner Exception: {ex.InnerException.Message}");
+                    if (ex.InnerException.InnerException != null)
+                    {
+                        Console.WriteLine($"Inner Inner Exception: {ex.InnerException.InnerException.Message}");
+                    }
+                }
+                throw;
+            }
         }
 
         public async Task<bool> DeleteUserAsync(string id)
@@ -115,13 +171,34 @@ namespace webApi.Repositories
             return profile;
         }
 
-        public async Task<List<courses>> GetUserFavoriteCoursesAsync(string userId)
+        public async Task<List<FavoriteCourseDetailDto>> GetUserFavoriteCoursesAsync(string userId)
         {
-            return await _context.UserFavoriteCourses
+            var favoriteCourses = await _context.UserFavoriteCourses
                 .Where(f => f.UserId == userId)
                 .Include(f => f.Course)
-                .Select(f => f.Course)
+                    .ThenInclude(c => c.Instructor)
+                .Include(f => f.Course)
+                    .ThenInclude(c => c.Ratings)
+                .Include(f => f.Course)
+                    .ThenInclude(c => c.Enrollments)
+                .Select(f => new FavoriteCourseDetailDto
+                {
+                    Id = f.Course.Id,
+                    Name = f.Course.Name,
+                    Description = f.Course.Description,
+                    ImageUrl = f.Course.ImageUrl,
+                    Price = f.Course.Price,
+                    InstructorName = f.Course.Instructor.FirstName + " " + f.Course.Instructor.LastName,
+                    InstructorImageUrl = f.Course.Instructor.ImageUrl,
+                    AverageRating = f.Course.Ratings.Any() 
+                        ? Math.Round(f.Course.Ratings.Average(r => r.RatingValue), 1)
+                        : 0,
+                    EnrollmentCount = f.Course.Enrollments.Count,
+                    CreatedAt = f.CreatedAt
+                })
                 .ToListAsync();
+
+            return favoriteCourses;
         }
 
         public async Task<bool> ToggleFavoriteCourseAsync(string userId, int courseId)
