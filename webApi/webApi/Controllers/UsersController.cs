@@ -622,7 +622,7 @@ namespace webApi.Controllers
                     return NotFound("Không tìm thấy người dùng");
                 }
 
-                // Cập nhật role trong Clerk
+                // Cập nhật role trên Clerk
                 var client = _httpClientFactory.CreateClient("Clerk");
                 var secretKey = _configuration["Clerk:SecretKey"];
                 
@@ -631,7 +631,7 @@ namespace webApi.Controllers
                 // Tạo request body cho Clerk API
                 var updateData = new
                 {
-                    private_metadata = new
+                    public_metadata = new
                     {
                         role = updateRoleDto.Role
                     }

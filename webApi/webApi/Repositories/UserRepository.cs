@@ -171,13 +171,34 @@ namespace webApi.Repositories
             return profile;
         }
 
-        public async Task<List<courses>> GetUserFavoriteCoursesAsync(string userId)
+        public async Task<List<FavoriteCourseDetailDto>> GetUserFavoriteCoursesAsync(string userId)
         {
-            return await _context.UserFavoriteCourses
+            var favoriteCourses = await _context.UserFavoriteCourses
                 .Where(f => f.UserId == userId)
                 .Include(f => f.Course)
-                .Select(f => f.Course)
+                    .ThenInclude(c => c.Instructor)
+                .Include(f => f.Course)
+                    .ThenInclude(c => c.Ratings)
+                .Include(f => f.Course)
+                    .ThenInclude(c => c.Enrollments)
+                .Select(f => new FavoriteCourseDetailDto
+                {
+                    Id = f.Course.Id,
+                    Name = f.Course.Name,
+                    Description = f.Course.Description,
+                    ImageUrl = f.Course.ImageUrl,
+                    Price = f.Course.Price,
+                    InstructorName = f.Course.Instructor.FirstName + " " + f.Course.Instructor.LastName,
+                    InstructorImageUrl = f.Course.Instructor.ImageUrl,
+                    AverageRating = f.Course.Ratings.Any() 
+                        ? Math.Round(f.Course.Ratings.Average(r => r.RatingValue), 1)
+                        : 0,
+                    EnrollmentCount = f.Course.Enrollments.Count,
+                    CreatedAt = f.CreatedAt
+                })
                 .ToListAsync();
+
+            return favoriteCourses;
         }
 
         public async Task<bool> ToggleFavoriteCourseAsync(string userId, int courseId)

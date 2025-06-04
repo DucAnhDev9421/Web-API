@@ -6,6 +6,7 @@ using webApi.Repositories;
 using Microsoft.EntityFrameworkCore;
 using webApi.Model;
 using webApi.Services;
+using System.Text.Json;
 
 namespace webApi.Controllers
 {
@@ -91,7 +92,8 @@ namespace webApi.Controllers
                             Content = l.Content,
                             Duration = l.Duration
                         }).ToList()
-                    }).ToList()
+                    }).ToList(),
+                    Topics = !string.IsNullOrEmpty(course.Topics) ? JsonSerializer.Deserialize<List<string>>(course.Topics) : new List<string>()
                 };
 
                 return Ok(response);
@@ -266,7 +268,8 @@ namespace webApi.Controllers
 
                             return lesson;
                         }).Select(t => t.Result).ToList()
-                    }).ToList()
+                    }).ToList(),
+                    Topics = dto.Topics != null ? System.Text.Json.JsonSerializer.Serialize(dto.Topics) : null
                 };
 
                 _context.courses.Add(course);
@@ -297,7 +300,8 @@ namespace webApi.Controllers
                                 Type = (int)l.Type,
                                 Content = l.Content
                             }).ToList()
-                        }).ToList()
+                        }).ToList(),
+                        Topics = !string.IsNullOrEmpty(course.Topics) ? System.Text.Json.JsonSerializer.Deserialize<List<string>>(course.Topics) : new List<string>()
                     }
                 });
             }

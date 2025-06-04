@@ -34,5 +34,6 @@ namespace webApi.Model.CourseModel
         public List<SectionResponseDto> Sections { get; set; }
         public InstructorInfo Instructor { get; set; }
         public string TotalDuration { get; set; }
+        public List<string> Topics { get; set; }
     }
 } 

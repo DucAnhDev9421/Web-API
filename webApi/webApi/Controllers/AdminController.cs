@@ -7,14 +7,15 @@ namespace webApi.Controllers
 {
     [Route("api/admin")]
     [ApiController]
-    [Authorize(Roles = "Admin")]
     public class AdminController : ControllerBase
     {
         private readonly IAdminRepository _adminRepository;
+        private readonly IcoursesRepository _coursesRepository;
 
-        public AdminController(IAdminRepository adminRepository)
+        public AdminController(IAdminRepository adminRepository, IcoursesRepository coursesRepository)
         {
             _adminRepository = adminRepository;
+            _coursesRepository = coursesRepository;
         }
 
         private bool IsAdmin()
@@ -45,14 +46,8 @@ namespace webApi.Controllers
         {
             try
             {
-                var overview = await _adminRepository.GetOverviewAsync();
-                return Ok(new
-                {
-                    overview.CourseStats,
-                    overview.UserStats,
-                    overview.RatingStats,
-                    // Add any additional stats needed for the dashboard
-                });
+                var stats = await _coursesRepository.GetDashboardStatsAsync();
+                return Ok(stats);
             }
             catch (Exception ex)
             {

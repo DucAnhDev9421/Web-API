@@ -72,5 +72,7 @@ namespace webApi.Model.CourseModel
 
         // Navigation properties
         public ICollection<Enrollment> Enrollments { get; set; }
+
+        public string Topics { get; set; }
     }
 }

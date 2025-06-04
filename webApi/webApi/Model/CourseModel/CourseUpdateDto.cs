@@ -33,5 +33,6 @@ namespace webApi.Model.CourseModel
         public int CategoryId { get; set; }
         public string InstructorId { get; set; }
         public List<SectionUpdateDto> Sections { get; set; }
+        public List<string> Topics { get; set; }
     }
 } 

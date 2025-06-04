@@ -16,10 +16,28 @@ namespace webApi.Repositories
 
         public async Task<IEnumerable<CourseWithCategoryDto>> GetcoursesAsync()
         {
-            return await _context.courses
+            var courses = await _context.courses
                 .Include(c => c.Category)
                 .Include(c => c.Instructor)
-                .Select(c => new CourseWithCategoryDto
+                .Include(c => c.Sections)
+                    .ThenInclude(s => s.Lessons)
+                .ToListAsync();
+
+            var result = courses.Select(c => {
+                // Tính tổng thời lượng video
+                var totalSeconds = c.Sections?
+                    .SelectMany(s => s.Lessons)
+                    .Where(l => l.Type == (int)LessonType.Video && !string.IsNullOrEmpty(l.Duration))
+                    .Sum(l => ParseDurationToSeconds(l.Duration)) ?? 0;
+
+                // Tính số lượng đăng ký
+                var enrollmentCount = _context.Enrollments.Count(e => e.CourseId == c.Id);
+
+                // Tính đánh giá sao trung bình
+                var ratings = _context.Ratings.Where(r => r.CourseId == c.Id).ToList();
+                double avgRating = ratings.Any() ? Math.Round(ratings.Average(r => r.RatingValue), 1) : 0;
+
+                return new CourseWithCategoryDto
                 {
                     Id = c.Id,
                     Name = c.Name,
@@ -37,9 +55,52 @@ namespace webApi.Repositories
                         Id = c.Instructor.Id,
                         Username = c.Instructor.FirstName,
                         ImageUrl = c.Instructor.ImageUrl
-                    } : null
-                })
-                .ToListAsync();
+                    } : null,
+                    AverageRating = avgRating,
+                    EnrollmentCount = enrollmentCount,
+                    TotalDuration = FormatTotalDuration(totalSeconds)
+                };
+            }).ToList();
+
+            return result;
+        }
+
+        private int ParseDurationToSeconds(string duration)
+        {
+            if (string.IsNullOrEmpty(duration)) return 0;
+            var parts = duration.Split(':');
+            if (parts.Length == 2)
+            {
+                if (int.TryParse(parts[0], out int minutes) && int.TryParse(parts[1], out int seconds))
+                {
+                    return minutes * 60 + seconds;
+                }
+            }
+            else if (parts.Length == 3)
+            {
+                if (int.TryParse(parts[0], out int hours) &&
+                    int.TryParse(parts[1], out int minutes) &&
+                    int.TryParse(parts[2], out int seconds))
+                {
+                    return hours * 3600 + minutes * 60 + seconds;
+                }
+            }
+            return 0;
+        }
+
+        private string FormatTotalDuration(int totalSeconds)
+        {
+            var hours = totalSeconds / 3600;
+            var minutes = (totalSeconds % 3600) / 60;
+            var seconds = totalSeconds % 60;
+            if (hours > 0)
+            {
+                return $"{hours:D2}:{minutes:D2}:{seconds:D2}";
+            }
+            else
+            {
+                return $"{minutes:D2}:{seconds:D2}";
+            }
         }
 
         public async Task<CourseWithCategoryDto> GetcoursesByIdAsync(int id)
@@ -336,6 +397,90 @@ namespace webApi.Repositories
                 LearnedCount = progresses.Count(p => p.VideoId == v.Id)
             }).ToList();
             return result;
+        }
+
+        public async Task<DashboardStatsDto> GetDashboardStatsAsync()
+        {
+            var now = DateTime.UtcNow;
+            var firstDayOfMonth = new DateTime(now.Year, now.Month, 1);
+
+            // Tổng số người dùng
+            var totalUsers = await _context.Users.CountAsync();
+
+            // Tổng số khóa học
+            var totalCourses = await _context.courses.CountAsync();
+
+            // Số học viên đang học (có tiến độ học tập trong 30 ngày gần đây)
+            var thirtyDaysAgo = now.AddDays(-30);
+            var activeStudents = await _context.UserCourseProgress
+                .Where(p => p.LastAccessed >= thirtyDaysAgo)
+                .Select(p => p.UserId)
+                .Distinct()
+                .CountAsync();
+
+            // Top khóa học đăng ký nhiều nhất
+            var enrollmentGroups = await _context.Enrollments
+                .GroupBy(e => e.CourseId)
+                .Select(g => new
+                {
+                    CourseId = g.Key,
+                    EnrollmentCount = g.Count()
+                })
+                .OrderByDescending(x => x.EnrollmentCount)
+                .Take(5)
+                .ToListAsync();
+
+            var topEnrolledCourses = new List<TopEnrolledCourseDto>();
+            foreach (var group in enrollmentGroups)
+            {
+                var course = await _context.courses.FindAsync(group.CourseId);
+                if (course != null)
+                {
+                    var averageRating = await _context.Ratings
+                        .Where(r => r.CourseId == group.CourseId)
+                        .AverageAsync(r => (double?)r.RatingValue) ?? 0;
+
+                    topEnrolledCourses.Add(new TopEnrolledCourseDto
+                    {
+                        CourseId = course.Id,
+                        CourseName = course.Name,
+                        ImageUrl = course.ImageUrl,
+                        EnrollmentCount = group.EnrollmentCount,
+                        AverageRating = averageRating
+                    });
+                }
+            }
+
+            // Phân bố khóa học theo danh mục
+            var categories = await _context.Categories.ToListAsync();
+            var categoryDistribution = new List<CategoryDistributionDto>();
+            
+            foreach (var category in categories)
+            {
+                var courseCount = await _context.courses
+                    .CountAsync(c => c.CategoryId == category.Id);
+
+                categoryDistribution.Add(new CategoryDistributionDto
+                {
+                    CategoryId = category.Id,
+                    CategoryName = category.Name,
+                    CourseCount = courseCount
+                });
+            }
+
+            // Số người dùng mới trong tháng
+            var newUsersThisMonth = await _context.Users
+                .CountAsync(u => u.CreatedAt >= firstDayOfMonth);
+
+            return new DashboardStatsDto
+            {
+                TotalUsers = totalUsers,
+                TotalCourses = totalCourses,
+                ActiveStudents = activeStudents,
+                TopEnrolledCourses = topEnrolledCourses,
+                CategoryDistribution = categoryDistribution,
+                NewUsersThisMonth = newUsersThisMonth
+            };
         }
     }
 }

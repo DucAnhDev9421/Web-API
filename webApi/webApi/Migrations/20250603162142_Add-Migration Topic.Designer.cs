@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using webApi.Model;
 
@@ -11,9 +12,11 @@ using webApi.Model;
 namespace webApi.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250603162142_Add-Migration Topic")]
+    partial class AddMigrationTopic
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -200,10 +203,6 @@ namespace webApi.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
-                    b.Property<string>("Topics")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("VideoDemoUrl")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -215,6 +214,28 @@ namespace webApi.Migrations
                     b.HasIndex("InstructorId");
 
                     b.ToTable("courses");
+                });
+
+            modelBuilder.Entity("webApi.Model.CourseTopic", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CourseId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Topic")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CourseId");
+
+                    b.ToTable("CourseTopics");
                 });
 
             modelBuilder.Entity("webApi.Model.Enrollment", b =>
@@ -642,6 +663,17 @@ namespace webApi.Migrations
                     b.Navigation("Instructor");
                 });
 
+            modelBuilder.Entity("webApi.Model.CourseTopic", b =>
+                {
+                    b.HasOne("webApi.Model.CourseModel.courses", "Course")
+                        .WithMany("CourseTopics")
+                        .HasForeignKey("CourseId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Course");
+                });
+
             modelBuilder.Entity("webApi.Model.Enrollment", b =>
                 {
                     b.HasOne("webApi.Model.CourseModel.courses", "Course")
@@ -772,6 +804,8 @@ namespace webApi.Migrations
 
             modelBuilder.Entity("webApi.Model.CourseModel.courses", b =>
                 {
+                    b.Navigation("CourseTopics");
+
                     b.Navigation("Enrollments");
 
                     b.Navigation("Ratings");
