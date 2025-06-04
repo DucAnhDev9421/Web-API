@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using webApi.Model.CartModel;
 using webApi.Model.CategoryModel;
+using webApi.Model.CouponModel;
 using webApi.Model.CourseModel;
 using webApi.Model.UserModel;
 namespace webApi.Model
@@ -26,6 +27,8 @@ namespace webApi.Model
         public DbSet<Cart> Carts { get; set; }
         public DbSet<CartItem> CartItems { get; set; }
         public DbSet<LessonProgress> LessonProgresses { get; set; }
+        public DbSet<Coupon> Coupons { get; set; }
+        public DbSet<CouponUsage> CouponUsages { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -101,6 +104,18 @@ namespace webApi.Model
                 .WithMany()
                 .HasForeignKey(rc => rc.RelatedCourseId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<CouponUsage>()
+                .HasOne(cu => cu.Coupon)
+                .WithMany(c => c.CouponUsages)
+                .HasForeignKey(cu => cu.CouponId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<CouponUsage>()
+                .HasOne(cu => cu.User)
+                .WithMany()
+                .HasForeignKey(cu => cu.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

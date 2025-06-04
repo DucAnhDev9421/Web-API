@@ -93,6 +93,7 @@ builder.Services.AddScoped<IAdminRepository, AdminRepository>();
 builder.Services.AddScoped<IEnrollmentRepository, EnrollmentRepository>();
 builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
 builder.Services.AddScoped<IYouTubeService, YouTubeApiService>();
+builder.Services.AddScoped<ICouponRepository, CouponRepository>();
 
 // Add CORS policy
 builder.Services.AddCors(options =>
