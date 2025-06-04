@@ -60,6 +60,18 @@ namespace webApi.Controllers
                     .Where(l => l.Type == (int)LessonType.Video && !string.IsNullOrEmpty(l.Duration))
                     .Sum(l => ParseDurationToSeconds(l.Duration)) ?? 0;
 
+                // Tính thông tin đánh giá
+                var ratings = await _context.Ratings
+                    .Where(r => r.CourseId == id)
+                    .ToListAsync();
+
+                var averageRating = ratings.Any() ? ratings.Average(r => r.RatingValue) : 0;
+                var totalRatings = ratings.Count;
+
+                // Tính số học viên đăng ký
+                var enrollmentCount = await _context.Enrollments
+                    .CountAsync(e => e.CourseId == id);
+
                 var response = new CourseResponseDto
                 {
                     Id = course.Id,
@@ -93,7 +105,11 @@ namespace webApi.Controllers
                             Duration = l.Duration
                         }).ToList()
                     }).ToList(),
-                    Topics = !string.IsNullOrEmpty(course.Topics) ? JsonSerializer.Deserialize<List<string>>(course.Topics) : new List<string>()
+                    Topics = !string.IsNullOrEmpty(course.Topics) ? JsonSerializer.Deserialize<List<string>>(course.Topics) : new List<string>(),
+                    // Thêm thông tin mới
+                    AverageRating = Math.Round(averageRating, 1),
+                    TotalRatings = totalRatings,
+                    EnrollmentCount = enrollmentCount
                 };
 
                 return Ok(response);
@@ -567,6 +583,76 @@ namespace webApi.Controllers
                 return null;
 
             return allLessons[currentIndex + 1];
+        }
+
+        [HttpGet("popular")]
+        public async Task<IActionResult> GetPopularCourses([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+        {
+            try
+            {
+                // Validate pagination parameters
+                if (page < 1) page = 1;
+                if (pageSize < 1 || pageSize > 50) pageSize = 10;
+
+                var popularCourses = await _context.courses
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Category)
+                    .Select(c => new
+                    {
+                        Course = c,
+                        AverageRating = _context.Ratings
+                            .Where(r => r.CourseId == c.Id)
+                            .Average(r => (double?)r.RatingValue) ?? 0,
+                        EnrollmentCount = _context.Enrollments
+                            .Count(e => e.CourseId == c.Id)
+                    })
+                    .OrderByDescending(x => x.AverageRating * 0.7 + x.EnrollmentCount * 0.3) // Weighted scoring
+                    .Skip((page - 1) * pageSize)
+                    .Take(pageSize)
+                    .Select(x => new CourseWithCategoryDto
+                    {
+                        Id = x.Course.Id,
+                        Name = x.Course.Name,
+                        Price = x.Course.Price,
+                        Description = x.Course.Description,
+                        ImageUrl = x.Course.ImageUrl,
+                        Status = x.Course.Status,
+                        StatusText = x.Course.StatusText,
+                        Level = x.Course.Level,
+                        LevelText = x.Course.LevelText,
+                        CategoryId = x.Course.CategoryId,
+                        CategoryName = x.Course.Category != null ? x.Course.Category.Name : null,
+                        Instructor = x.Course.Instructor != null ? new webApi.Model.CourseModel.InstructorInfo
+                        {
+                            Id = x.Course.Instructor.Id,
+                            Username = x.Course.Instructor.FirstName,
+                            ImageUrl = x.Course.Instructor.ImageUrl
+                        } : null,
+                        AverageRating = Math.Round(x.AverageRating, 1),
+                        EnrollmentCount = x.EnrollmentCount
+                    })
+                    .ToListAsync();
+
+                // Get total count for pagination
+                var totalCount = await _context.courses.CountAsync();
+                var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+
+                return Ok(new
+                {
+                    Courses = popularCourses,
+                    Pagination = new
+                    {
+                        CurrentPage = page,
+                        PageSize = pageSize,
+                        TotalPages = totalPages,
+                        TotalItems = totalCount
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Internal server error: {ex.Message}");
+            }
         }
     }
 }

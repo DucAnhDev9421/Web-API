@@ -29,8 +29,11 @@ namespace webApi.Controllers
 
                 var query = q.ToLower().Trim();
 
-                // Search in courses
+                // Search in courses with additional information
                 var courses = await _context.courses
+                    .Include(c => c.Instructor)
+                    .Include(c => c.Category)
+                    .Include(c => c.Ratings)
                     .Where(c => c.Status == CourseStatus.Approved &&
                         (c.Name.ToLower().Contains(query) ||
                          (c.Description != null && c.Description.ToLower().Contains(query))))
@@ -41,7 +44,23 @@ namespace webApi.Controllers
                         Name = c.Name,
                         Description = c.Description,
                         Price = c.Price,
-                        ImageUrl = c.ImageUrl
+                        ImageUrl = c.ImageUrl,
+                        Status = c.Status,
+                        StatusText = c.StatusText,
+                        Level = c.Level,
+                        LevelText = c.LevelText,
+                        CategoryId = c.CategoryId,
+                        CategoryName = c.Category != null ? c.Category.Name : null,
+                        Instructor = c.Instructor != null ? new
+                        {
+                            Id = c.Instructor.Id,
+                            Username = c.Instructor.FirstName,
+                            ImageUrl = c.Instructor.ImageUrl
+                        } : null,
+                        // Thêm thông tin đánh giá và số học viên
+                        AverageRating = c.Ratings.Any() ? Math.Round(c.Ratings.Average(r => r.RatingValue), 1) : 0,
+                        TotalRatings = c.Ratings.Count,
+                        EnrollmentCount = _context.Enrollments.Count(e => e.CourseId == c.Id)
                     })
                     .ToListAsync();
 
@@ -52,7 +71,9 @@ namespace webApi.Controllers
                     {
                         Type = "category",
                         Id = c.Id,
-                        Name = c.Name
+                        Name = c.Name,
+                        Description = c.Description,
+                        CourseCount = _context.courses.Count(co => co.CategoryId == c.Id)
                     })
                     .ToListAsync();
 
@@ -88,34 +109,50 @@ namespace webApi.Controllers
             {
                 if (string.IsNullOrWhiteSpace(q))
                 {
-                    return Ok(new { suggestions = new List<string>() });
+                    return Ok(new { suggestions = new List<object>() });
                 }
                 var query = q.ToLower().Trim();
 
                 // Lấy gợi ý từ tên khóa học
                 var courseSuggestions = await _context.courses
                     .Where(c => c.Status == CourseStatus.Approved && c.Name.ToLower().Contains(query))
-                    .Select(c => c.Name)
-                    .Distinct()
+                    .Select(c => new {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Type = "course",
+                        ImageUrl = c.ImageUrl,
+                        Instructor = c.Instructor != null ? new {
+                            Id = c.Instructor.Id,
+                            Name = c.Instructor.FirstName,
+                            ImageUrl = c.Instructor.ImageUrl
+                        } : null
+                    })
                     .Take(limit)
                     .ToListAsync();
 
                 // Lấy gợi ý từ tên danh mục
                 var categorySuggestions = await _context.Categories
                     .Where(c => c.Name.ToLower().Contains(query))
-                    .Select(c => c.Name)
-                    .Distinct()
+                    .Select(c => new {
+                        Id = c.Id,
+                        Name = c.Name,
+                        Type = "category",
+                        CourseCount = _context.courses.Count(co => co.CategoryId == c.Id)
+                    })
                     .Take(limit)
                     .ToListAsync();
 
-                // Gộp và loại trùng, ưu tiên tên khóa học trước
+                // Gộp và sắp xếp kết quả, ưu tiên khóa học trước
                 var suggestions = courseSuggestions
-                    .Concat(categorySuggestions)
-                    .Distinct()
+                    .Cast<object>()
+                    .Concat(categorySuggestions.Cast<object>())
                     .Take(limit)
                     .ToList();
 
-                return Ok(new { suggestions });
+                return Ok(new { 
+                    suggestions,
+                    total = suggestions.Count
+                });
             }
             catch (Exception ex)
             {

@@ -3,6 +3,7 @@ using webApi.Model.CartModel;
 using webApi.Model.CategoryModel;
 using webApi.Model.CouponModel;
 using webApi.Model.CourseModel;
+using webApi.Model.SlideModel;
 using webApi.Model.UserModel;
 namespace webApi.Model
 {
@@ -29,6 +30,7 @@ namespace webApi.Model
         public DbSet<LessonProgress> LessonProgresses { get; set; }
         public DbSet<Coupon> Coupons { get; set; }
         public DbSet<CouponUsage> CouponUsages { get; set; }
+        public DbSet<Slide> Slides { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -116,6 +118,11 @@ namespace webApi.Model
                 .WithMany()
                 .HasForeignKey(cu => cu.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            // Cấu hình độ chính xác và tỷ lệ cho DiscountAmount trong Coupon
+            modelBuilder.Entity<Coupon>()
+                .Property(c => c.DiscountAmount)
+                .HasPrecision(18, 2);
         }
     }
 }

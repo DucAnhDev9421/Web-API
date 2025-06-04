@@ -32,7 +32,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Migrations\" />
     <Folder Include="Model\PaymentModel\MoMo\" />
     <Folder Include="Model\PaymentModel\VNPAY\" />
     <Folder Include="wwwroot\uploads\" />

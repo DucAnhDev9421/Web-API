@@ -509,17 +509,36 @@ namespace webApi.Controllers
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(id);
+                var user = await _context.Users
+                    .Include(u => u.Courses)
+                        .ThenInclude(c => c.Enrollments)
+                    .FirstOrDefaultAsync(u => u.Id == id);
+
                 if (user == null)
                 {
                     return NotFound("Không tìm thấy thông tin giảng viên");
                 }
 
+                // Tính toán thống kê
+                var totalCourses = user.Courses?.Count ?? 0;
+                var totalStudents = user.Courses?.Sum(c => c.Enrollments?.Count ?? 0) ?? 0;
+                var averageRating = user.Courses?.Any() == true 
+                    ? Math.Round(user.Courses.Average(c => c.Ratings?.Average(r => r.RatingValue) ?? 0), 1)
+                    : 0;
+
                 var instructorInfo = new InstructorInfo
                 {
                     Id = user.Id,
                     Username = user.Username,
-                    ImageUrl = user.ImageUrl
+                    ImageUrl = user.ImageUrl,
+                    JobTitle = user.JobTitle,
+                    Bio = user.Bio,
+                    Statistics = new InstructorStatistics
+                    {
+                        TotalCourses = totalCourses,
+                        TotalStudents = totalStudents,
+                        AverageRating = averageRating
+                    }
                 };
 
                 return Ok(instructorInfo);
@@ -821,6 +840,16 @@ namespace webApi.Controllers
         public string Id { get; set; }
         public string Username { get; set; }
         public string ImageUrl { get; set; }
+        public string JobTitle { get; set; }
+        public string Bio { get; set; }
+        public InstructorStatistics Statistics { get; set; }
+    }
+
+    public class InstructorStatistics
+    {
+        public int TotalCourses { get; set; }
+        public int TotalStudents { get; set; }
+        public double AverageRating { get; set; }
     }
 
     public class UpdateRoleDto

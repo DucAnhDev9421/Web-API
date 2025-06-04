@@ -35,5 +35,8 @@ namespace webApi.Model.CourseModel
         public InstructorInfo Instructor { get; set; }
         public string TotalDuration { get; set; }
         public List<string> Topics { get; set; }
+        public double AverageRating { get; set; }
+        public int TotalRatings { get; set; }
+        public int EnrollmentCount { get; set; }
     }
 } 
